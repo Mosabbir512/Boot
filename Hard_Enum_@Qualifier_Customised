@@ -1,0 +1,75 @@
+@Configuration    //by default true
+public class AppConfig {
+    @Bean
+    public Address address(){
+        return new Address("Road-20","House-40");
+    }
+    @Bean
+    @Villa(VillaType.KHAN)
+    public Address address1(){
+        return new Address("Road-21","House-41");
+    }
+    @Bean
+    @Villa(VillaType.MASTER)
+    public Address address2(){
+        return new Address("Road-22","House-42");
+    }
+}
+
+
+@ToString
+@Component
+public class Student {
+
+      @Villa(VillaType.KHAN)
+      @Autowired
+      private Address a;
+}
+
+
+
+@ToString
+@Getter
+@AllArgsConstructor
+public class Address {
+    private String roadNo;
+    private String houseName;
+
+}
+
+
+
+@Configuration    //by default true
+public class AppConfig {
+    @Bean
+    public Address address(){
+        return new Address("Road-20","House-40");
+    }
+    @Bean
+    @Villa(VillaType.KHAN)
+    public Address address1(){
+        return new Address("Road-21","House-41");
+    }
+    @Bean
+    @Villa(VillaType.MASTER)
+    public Address address2(){
+        return new Address("Road-22","House-42");
+    }
+}
+
+
+
+@Qualifier
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD,ElementType.TYPE,ElementType.METHOD,ElementType.PARAMETER})
+public @interface Villa {
+    VillaType value();
+}
+
+
+
+
+public enum VillaType {
+    KHAN,MASTER;
+}
+

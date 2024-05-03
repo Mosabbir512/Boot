@@ -1,0 +1,46 @@
+@ToString
+@Component
+public class Student {
+      @MasterVilla
+      @Autowired
+      private Address a;
+}
+
+@ToString
+@Getter
+@AllArgsConstructor
+public class Address {
+    private String roadNo;
+    private String houseName;
+}
+
+@Configuration    
+public class AppConfig {
+    @Bean
+    public Address address(){
+        return new Address("Road-20","House-40");
+    }
+    @Bean
+    @MasterVilla
+    public Address address1(){
+        return new Address("Road-21","House-41");
+    }
+    @Bean
+    @Primary
+    public Address address2(){
+        return new Address("Road-22","House-42");
+    }
+}
+
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		//SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		Student student=context.getBean(Student.class);
+		System.out.println(student);
+	}
+}
+
+

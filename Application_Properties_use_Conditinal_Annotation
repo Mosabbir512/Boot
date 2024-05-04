@@ -1,0 +1,54 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		Student student=context.getBean(Student.class);
+		System.out.println(context);
+		System.out.println(student);
+	}
+}
+
+
+user.name=root
+user.password=12345
+
+address.raod=40
+address.houseName=abcd
+
+
+
+import lombok.ToString;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@ToString
+@Component
+public class Student {
+      @Autowired
+      private Address address;
+}
+
+
+
+
+@ToString
+@Component
+@AllArgsConstructor
+@Conditional(value = CustomCondition.class)
+@NoArgsConstructor
+public class Address {
+    @Value("${address.raod}")
+    private Integer raod;
+    @Value("${address.houseName}")
+    private String houseName;
+}
+
+class CustomCondition implements Condition{
+
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        Environment env=context.getEnvironment();
+        return env.getProperty("address.raod")!=null && env.getProperty("address.houseName")!=null;
+    }
+}

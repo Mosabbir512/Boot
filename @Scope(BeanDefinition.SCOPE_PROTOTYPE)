@@ -1,0 +1,59 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SingletonBean singletonBean =context.getBean(SingletonBean.class);
+		singletonBean.execute();
+		singletonBean.execute();
+		singletonBean.execute();
+		SingletonBean singletonBean1 =context.getBean(SingletonBean.class);
+		singletonBean1.execute();
+		singletonBean1.execute();
+		singletonBean1.execute();
+
+	}
+}
+
+
+
+public class PrototypeBean {
+}
+
+
+
+
+Component
+public class SingletonBean {
+    @Autowired
+    private ApplicationContext context;
+    public void execute() {
+        PrototypeBean prototypeBean = context.getBean(PrototypeBean.class);
+        System.out.println(prototypeBean);
+    }
+}
+
+
+
+
+@Configuration
+public class AppConfig {
+    @Bean
+    @Scope(BeanDefinition.SCOPE_PROTOTYPE)  // Prototype bean definition scope
+     public PrototypeBean prototypeBean(){
+         return  new PrototypeBean();   // this is java base Prototype bean
+     }
+
+     @Bean
+     public String SimStr(){
+         return "this is simple bean";
+     }
+}
+
+
+// ans: com.sdle.pro1.eosb.model.PrototypeBean@34a2d6e0
+com.sdle.pro1.eosb.model.PrototypeBean@2525a5b8
+com.sdle.pro1.eosb.model.PrototypeBean@3458eca5
+com.sdle.pro1.eosb.model.PrototypeBean@1e0fdb2f
+com.sdle.pro1.eosb.model.PrototypeBean@3c380bd8
+com.sdle.pro1.eosb.model.PrototypeBean@34b87182

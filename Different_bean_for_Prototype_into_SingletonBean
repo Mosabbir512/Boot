@@ -1,0 +1,44 @@
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SingletonBean singletonBean =context.getBean(SingletonBean.class);
+		singletonBean.execute();
+		singletonBean.execute();
+		singletonBean.execute();
+
+	}
+}
+
+
+@Component
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class PrototypeBean {
+}
+
+
+
+@Component
+public class SingletonBean implements ApplicationContextAware {
+    private  ApplicationContext context;
+    private PrototypeBean prototypeBean;
+    public void execute(){
+         PrototypeBean prototypeBean=context.getBean(PrototypeBean.class);
+         System.out.println(prototypeBean);
+    }
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.context=applicationContext;
+    }
+}
+
+
+
+
+
+// ans is : different bean
+com.sdle.pro1.eosb.model.PrototypeBean@2c991465
+com.sdle.pro1.eosb.model.PrototypeBean@5fef2aac
+com.sdle.pro1.eosb.model.PrototypeBean@7f973a14

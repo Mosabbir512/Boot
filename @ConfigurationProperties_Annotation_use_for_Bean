@@ -1,0 +1,11 @@
+@ToString
+@Component
+@AllArgsConstructor
+@Setter  // @ConfigurationProperties kaj kore setter base . so Setter na dile null valu provide kore
+@ConfigurationProperties(prefix = "address")
+@NoArgsConstructor
+public class Address {
+    private Integer raod;
+    private String houseName;
+}
+

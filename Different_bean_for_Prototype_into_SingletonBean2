@@ -1,0 +1,10 @@
+@Component
+public class SingletonBean {
+    @Autowired
+    private ApplicationContext context;
+    public void execute() {
+        PrototypeBean prototypeBean = context.getBean(PrototypeBean.class);
+        System.out.println(prototypeBean);
+    }
+}
+

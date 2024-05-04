@@ -1,0 +1,37 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SingletonBean singletonBean =context.getBean(SingletonBean.class);
+		singletonBean.execute();
+		singletonBean.execute();
+		singletonBean.execute();
+
+	}
+}
+
+
+@Component
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class PrototypeBean {
+}
+
+
+
+@Component
+public class SingletonBean {
+    @Autowired
+    private PrototypeBean prototypeBean;
+    public void execute(){
+        System.out.println(prototypeBean);
+    }
+}
+
+
+
+//   Ans is : all are same . because bean ti constructor dara akbar e inject hoye jay
+com.sdle.pro1.eosb.model.PrototypeBean@2525a5b8
+com.sdle.pro1.eosb.model.PrototypeBean@2525a5b8
+com.sdle.pro1.eosb.model.PrototypeBean@2525a5b8
+

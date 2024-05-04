@@ -1,0 +1,14 @@
+@ToString
+@Component
+@AllArgsConstructor
+@ConditionalOnProperty(
+        prefix = "address",
+        name = {"raod","houseName"}
+)
+@NoArgsConstructor
+public class Address {
+    @Value("${address.raod}")
+    private Integer raod;
+    @Value("${address.houseName}")
+    private String houseName;
+}

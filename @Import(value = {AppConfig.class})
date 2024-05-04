@@ -1,0 +1,12 @@
+@SpringBootApplication
+@Import(value = {AppConfig.class})
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		Student student=context.getBean(Student.class);
+		System.out.println(context);
+		System.out.println(student);
+		System.out.println(context.getBean("SimStr"));
+	}
+}

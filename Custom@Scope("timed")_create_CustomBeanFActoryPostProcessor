@@ -1,0 +1,60 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		System.out.println(context.getBean(TimedBean.class));
+		System.out.println(context.getBean(TimedBean.class));
+		System.out.println(context.getBean(TimedBean.class));
+		System.out.println(context.getBean(TimedBean.class));
+		System.out.println(context.getBean(TimedBean.class));
+	}
+}
+
+
+@Component
+@Scope("timed")
+public class TimedBean {
+
+}
+
+
+
+
+public class TimedScope implements Scope {
+    @Override
+    public Object get(String name, ObjectFactory<?> objectFactory) {
+        return objectFactory.getObject();
+    }
+
+    @Override
+    public Object remove(String name) {
+        return null;
+    }
+
+    @Override
+    public void registerDestructionCallback(String name, Runnable callback) {
+
+    }
+
+    @Override
+    public Object resolveContextualObject(String key) {
+        return null;
+    }
+
+    @Override
+    public String getConversationId() {
+        return UUID.randomUUID().toString();
+    }
+}
+
+
+
+
+@Component  // Scope regester
+public class CustomBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+           beanFactory.registerScope("timed", new TimedScope());
+    }
+}

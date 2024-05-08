@@ -1,0 +1,11 @@
+
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		context.getBeanFactory().registerScope("timed",new TimedScope1());
+		System.out.println(context.getBean(TimedBean.class));
+	}
+}

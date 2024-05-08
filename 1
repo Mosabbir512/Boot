@@ -1,0 +1,78 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		System.out.println(context.getBean(TimedBean1.class));
+		Thread.sleep(4000);
+		System.out.println(context.getBean(TimedBean1.class));
+		Thread.sleep(2000);
+		System.out.println(context.getBean(TimedBean1.class));
+		Thread.sleep(1000);
+		System.out.println(context.getBean(TimedBean1.class));
+		Thread.sleep(3000);
+		System.out.println(context.getBean(TimedBean1.class));
+	}
+}
+
+
+
+
+@Component
+@Scope("timed")
+public class TimedBean1 {
+    @PreDestroy
+     public void destroy(){
+         System.out.println("delete successfully");
+     }
+}
+
+
+
+
+public class TimedScope1 implements Scope {
+    public final Map<String,Object> map=new ConcurrentHashMap<>();
+    public  TimedScope1(){
+        new Thread(this::CleanBean1).start();
+    }
+    public void CleanBean1(){
+        while(1==1){
+            try {
+                Thread.sleep(5000);
+                map.clear();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public Object get(String name, ObjectFactory<?> objectFactory) {
+        if(map.containsKey(name))
+            return objectFactory.getObject();
+        Object obj= objectFactory.getObject();
+        map.put(name,obj);
+        return obj;
+    }
+
+    @Override
+    public Object remove(String name) {
+        return null;
+    }
+
+    @Override
+    public void registerDestructionCallback(String name, Runnable callback) {
+
+    }
+
+    @Override
+    public Object resolveContextualObject(String key) {
+        return null;
+    }
+
+    @Override
+    public String getConversationId() {
+        return UUID.randomUUID().toString();
+    }
+}
+

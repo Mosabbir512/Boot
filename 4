@@ -1,0 +1,24 @@
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		ConfigurableApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		System.out.println(context.getBean(Databaseinfo.class));
+	}
+}
+
+
+public class Databaseinfo {
+   @org.springframework.beans.factory.annotation.Value("${database.info.dbname}")
+    private String dbname;
+    @org.springframework.beans.factory.annotation.Value("${database.info.username}")
+    private String username;
+    @org.springframework.beans.factory.annotation.Value("${database.info.password}")
+    private String password;
+}
+
+
+// aplication.properties
+database.info.dbname=sakib
+database.info.username=ll hasan
+database.info.password=3456

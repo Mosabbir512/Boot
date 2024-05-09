@@ -1,0 +1,26 @@
+
+
+// From application.properties file
+spring.profiles.active=qa
+
+
+public class Databaseinfo {
+    private String dbname;
+    private String username;
+    private String password;
+
+    public Databaseinfo(@Autowired Environment environment) {
+        this.dbname=environment.getProperty("database.info.dbname");
+        this.username=environment.getProperty("database.info.username");
+        this.password=environment.getProperty("database.info.password");
+    }
+
+}
+
+
+
+// application-qa.properties
+
+atabase.info.dbname=simple_qa
+database.info.username=hasan_qa
+database.info.password=3456_qa

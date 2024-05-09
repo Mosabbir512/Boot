@@ -1,0 +1,13 @@
+public class Databaseinfo {
+    private String osName;
+    private String dbname;
+    private String username;
+    private String password;
+
+    public Databaseinfo(@Autowired Environment environment) {
+        this.osName=environment.getProperty("os.name");
+        this.dbname=environment.getProperty("database.info.dbname","sakib all");
+        this.username=environment.getProperty("database.info.username");
+        this.password=environment.getProperty("database.info.password");
+    }
+}

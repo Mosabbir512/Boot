@@ -1,0 +1,10 @@
+@Setter
+@Getter
+@ToString
+@Component
+@ConfigurationProperties(prefix ="database.info")
+public class Databaseinfo {
+    private String dbname;
+    private String username;
+    private String password;
+}

@@ -1,0 +1,65 @@
+package com.sdle.pro1.eosb;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.event.EventListener;
+
+import javax.swing.*;
+
+class SpringBootSessoin extends ApplicationEvent{
+	private final String message;
+
+	public SpringBootSessoin(Object source,String message) {
+		super(source);
+		this.message=message;
+	}
+
+	@Override
+	public String toString() {
+		return "SpringBootSessoin{" +
+				"message='" + message + '\'' +
+				", source=" + source +
+				'}';
+	}
+}
+
+class SqaSession extends ApplicationEvent{
+   private final String mess;
+	public SqaSession(Object source,String mess) {
+		super(source);
+		this.mess=mess;
+	}
+
+	@Override
+	public String toString() {
+		return "SqaSession{" +
+				"mess='" + mess + '\'' +
+				", source=" + source +
+				'}';
+	}
+}
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+        context.publishEvent(new SpringBootSessoin("main","SB today 10.00pm"));
+		context.publishEvent(new SqaSession("main","sqa today 11.00pm"));
+	}
+
+	@EventListener
+	public void Stu1(SpringBootSessoin event){
+		System.out.println("Stu1 :"+event);
+	}
+	@EventListener
+	public void Stu2(SqaSession event){
+		System.out.println("Stu2 :"+event);
+	}
+	@EventListener
+	public void Stu3(SpringBootSessoin event){
+		System.out.println("Stu3 :"+event);
+	}
+}

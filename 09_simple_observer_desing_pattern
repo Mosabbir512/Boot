@@ -1,0 +1,43 @@
+package com.sdle.pro1.eosb;
+import java.util.ArrayList;
+import java.util.List;
+class Observable{
+	List<Observer> list=new ArrayList<>();
+
+	public void subscriber(Observer observer){
+          list.add(observer);
+	}
+
+	public void publish(String information){
+         for(Observer observer:list){
+			 observer.info(information);
+		 }
+	}
+
+}
+interface Observer{
+	void info(String information);
+}
+
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+
+		Observable observable=new Observable();
+		Observer stu1=new Observer() {
+			@Override
+			public void info(String information) {
+				System.out.println("stu1 :" +information);
+			}
+		};
+		Observer stu2=(info)-> System.out.println("stu2 :"+info);
+		Observer stu3=(info)-> System.out.println("stu3 :"+info);
+
+		observable.subscriber(stu1);
+		observable.subscriber(stu3);
+
+		observable.publish("ajke rate 10.00pm spring boot class ache");
+
+	}
+}

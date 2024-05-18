@@ -1,0 +1,45 @@
+// aita aktu jotol vabe korchi
+
+package com.sdle.pro1.eosb;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+class SpringBootSession extends ApplicationEvent {
+	private final String message;
+
+	public SpringBootSession(Object source, String message) {
+		super(source);
+		this.message = message;
+	}
+
+	@Override
+	public String toString() {
+		return message;
+	}
+}
+	class Student implements ApplicationListener<SpringBootSession> {
+		private String name;
+		public Student(String name) {
+			this.name = name;
+		}
+		@Override
+		public void onApplicationEvent(SpringBootSession event) {
+			System.out.println(name + ":" + event.toString());
+		}
+	}
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication {
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context=SpringApplication.run(EngineeringOnSpringbootApplication.class, args);
+		ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+        context.addApplicationListener(new Student("stu1"));
+        context.addApplicationListener(new Student("stu2"));
+        context.addApplicationListener(new Student("stu3"));
+
+        context.publishEvent(new SpringBootSession("form main code","seession tonight 8.00 pm"));
+	}
+}

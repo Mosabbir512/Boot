@@ -1,0 +1,104 @@
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+@Controller
+public class HomeController {
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/home")
+    public String HomePage(){
+        return "home";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+
+
+
+package com.sdle.pro1.eosb.event;
+
+import org.springframework.context.ApplicationEvent;
+
+public class UserLoginEvent extends ApplicationEvent {
+
+    public UserLoginEvent() {
+        super("default");
+    }
+
+}
+
+
+
+
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+@Controller
+public class HomeController {
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/home")
+    public String HomePage(){
+        return "home";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+
+
+
+
+
+package com.sdle.pro1.eosb.listener;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
+
+@Configuration
+public class UserLoginListener {
+
+    @EventListener
+    public void welcomeMessage(UserLoginEvent event){
+        System.out.println("welcome to our Application");
+    }
+
+    @EventListener
+    public void updateActiveStatus(UserLoginEvent event){
+        System.out.println("user is active");
+    }
+
+    @EventListener
+    public void loginBonus(UserLoginEvent event){
+        System.out.println("You have got 1$ for login");
+    }
+
+}

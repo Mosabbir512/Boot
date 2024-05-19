@@ -1,0 +1,31 @@
+package com.sdle.pro1.eosb.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+@Configuration
+public class AppConfig {
+    @Autowired
+    private Environment env;
+    @Bean
+    public ThreadPoolTaskExecutor ourTaskExecutor(@Value("${pool.max.size}") int max){
+        ThreadPoolTaskExecutor executor=new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(Integer.parseInt(env.getProperty("pool.core.size")));
+        executor.setMaxPoolSize(max);
+        executor.setQueueCapacity(50);
+        executor.initialize();
+        executor.setThreadNamePrefix("sdle-por-exe-");
+        return executor;
+    }
+     @Bean
+     public String SimStr(){
+         return "this is simple bean";
+     }
+
+}

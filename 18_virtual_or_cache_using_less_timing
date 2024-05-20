@@ -1,0 +1,52 @@
+package com.sdle.pro1.eosb;
+
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class EngineeringOnSpringbootApplication{
+
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+          DbOperation dbOperation=new ProxyDbOperation(); // for proxy using virtual/cache time need less
+		  Object object1=dbOperation.fetchDataAndCreateObject(1);
+		  Object object2=dbOperation.fetchDataAndCreateObject(2);
+		  Object object3=dbOperation.fetchDataAndCreateObject(1);
+		  Object object4=dbOperation.fetchDataAndCreateObject(1);
+		System.out.println(object1);
+		System.out.println(object2);
+		System.out.println(object3);
+		System.out.println(object4);
+             // for proxy with virtual/cache : we need less time
+	}
+}
+
+interface  DbOperation{
+	 Object fetchDataAndCreateObject(int pk);
+}
+class RealBdOperation implements DbOperation{
+	@Override
+	public Object fetchDataAndCreateObject(int pk) {
+		//heavy db operation
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return new Object();
+	}
+}
+class ProxyDbOperation implements DbOperation{
+    private RealBdOperation realBdOperation=new RealBdOperation();
+	Map<Integer,Object> cache=new HashMap<>();
+	@Override
+	public Object fetchDataAndCreateObject(int pk) {
+		if(cache.containsKey(pk)){
+			return cache.get(pk);
+		}
+		Object obj=realBdOperation.fetchDataAndCreateObject(pk);
+		cache.put(pk,obj);
+		return obj;
+	}
+}

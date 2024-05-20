@@ -1,0 +1,44 @@
+package com.sdle.pro1.eosb;
+
+import java.util.logging.Logger;
+
+public class EngineeringOnSpringbootApplication{
+	static Logger log=Logger.getLogger(EngineeringOnSpringbootApplication.class.getName());
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+         Subject subject=new Proxy();
+		 subject.logic();
+		 int[] a={3,3,4,4,4,3,4,5,5,5,343434,5,5,5,5,4,43,333};
+		 sum(a);
+	}
+	static long sum(int[] a){
+		long st=System.nanoTime(); // secondary logic
+		long sum=0;
+		for(int  i:a){   // main login
+			sum+=i;
+		}
+		long et=System.nanoTime();  // secondary logic
+		log.info("Total consumed time by this sum method = %d".formatted(et-st));
+		return sum;
+	}
+}
+
+interface Subject{
+	void logic();
+}
+
+class RealSubject implements Subject{
+	@Override
+	public void logic(){
+		System.out.println("our business logic will impliment here....");
+	}
+}
+
+class Proxy implements Subject{
+	private RealSubject realSubject=new RealSubject();
+	@Override
+	public void logic(){
+		realSubject.logic();
+	}
+}

@@ -1,0 +1,47 @@
+package com.sdle.pro1.eosb;
+
+import java.util.logging.Logger;
+
+public class EngineeringOnSpringbootApplication{
+	static Logger log=Logger.getLogger(EngineeringOnSpringbootApplication.class.getName());
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+         Subject subject=new Proxy();
+		 int[] a={3,3,4,4,4,3,4,5,5,5,343434,5,5,5,5,4,43,333};
+		 long Total=subject.logic(a);
+		System.out.println("Total =%d".formatted(Total));
+	}
+}
+
+interface Subject{
+	long logic(int[] a);
+}
+
+class RealSubject implements Subject{
+	@Override
+	public long logic(int[] a){
+		long sum=0;
+		for(int  i:a){
+			sum+=i;
+		}
+		return sum;
+	}
+}
+
+class Proxy implements Subject{
+	private RealSubject realSubject=new RealSubject();
+    private Logger logger=Logger.getLogger(Proxy.class.getName());
+	@Override
+	public long logic(int[] a){
+		// secondary logic   before execution -> Before advice
+		long st=System.nanoTime();
+		
+		long total=realSubject.logic(a);   //execution primary logic
+		
+		//secondary logic  after execution -> After advice
+		long et=System.nanoTime();
+		logger.info("total time consumed : %d".formatted(et-st));
+		return total;
+	}
+}

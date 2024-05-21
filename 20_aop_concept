@@ -1,0 +1,78 @@
+package com.sdle.pro1.eosb.service;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MathService {
+    public int sum(int a,int b){
+        int c=a+b;
+        System.out.println("sum= "+c);
+        return c;
+    }
+    public int sum(int a,int b,int c){
+        int d=a+b+c;
+        System.out.println("sum1= "+d);
+        return d;
+    }
+    public int sub(int a,int b){
+        int c=a-b;
+        System.out.println("sub= "+c);
+        return c;
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.aspect;
+
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+@Aspect
+@Component
+public class SimpleAspect {
+     @Pointcut(value = "execution(int sum(int,int))" )
+     public void logPointcut(){};
+
+     @Before("logPointcut()")
+    public void beforeLog(){
+         System.out.println("--------------before execution---------------");
+     }
+
+     @After("logPointcut()")
+     public void afterLog(){
+         System.out.println("---------------after execution--------------");
+     }
+}
+
+
+
+
+@SpringBootApplication
+
+public class EngineeringOnSpringbootApplication implements CommandLineRunner {
+	@Autowired
+	private MathService mathService;
+
+	@Override
+	public void run(String... args) throws Exception {
+         int r=mathService.sum(4,5);
+          r=mathService.sum(4,5,6);
+	}
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+
+	}
+
+}
+
+
+//   output:
+--------------before execution---------------
+sum= 9
+---------------after execution--------------
+sum1= 15
+

@@ -1,0 +1,27 @@
+package com.sdle.pro1.eosb.aspect;
+
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+@Aspect
+@Component
+public class SimpleAspect {
+    // @Pointcut(value =  )
+     //public void logPointcut(){};
+
+     @Before(value="execution(* com.sdle.pro1.eosb.service.MathService.sum(int ,int )) && args(a,b)",argNames = "jp,a,b")
+    public void beforeLog(JoinPoint jp,int a,int b){
+         System.out.printf("a=%d b=%d%n", a,b);
+         System.out.println("--------------before execution---------------"+jp.getThis()+" "+jp.getTarget());
+     }
+
+     @After("within(com.sdle.pro1.eosb.service.*)")
+     public void afterLog(JoinPoint jp){
+         System.out.println("---------------after execution--------------");
+     }
+}
+// execution(modifiers-pattern? return-type-pattern declaring-type-pattern? name-pattern( param-pattern) throws-pattern?)

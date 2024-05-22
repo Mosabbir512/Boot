@@ -1,0 +1,79 @@
+package com.sdle.pro1.eosb.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class MathService {
+    public int sum(int a,int b){
+        int c=a+b;
+        System.out.println("sum= "+c);
+        return c;
+    }
+    public int sum(int a,int b,int c){
+        int d=a+b+c;
+        System.out.println("sum1= "+d);
+        return d;
+    }
+    public int sub(int a,int b){
+        int c=a-b;
+        System.out.println("sub= "+c);
+        return c;
+    }
+}
+
+
+
+
+package com.sdle.pro1.eosb.aspect;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+@Aspect
+@Component
+public class SimpleAspect {
+    // @Pointcut(value =  )
+     //public void logPointcut(){};
+
+     @Before("execution(int com.sdle.pro1.eosb.service.MathService.sum(..))")
+    public void beforeLog(JoinPoint jp){
+
+         System.out.println("--------------before execution---------------"+jp.getSignature());
+     }
+
+     @After("execution(int com.sdle.pro1.eosb.service.MathService.sum(..))")
+     public void afterLog(){
+         System.out.println("---------------after execution--------------");
+     }
+}
+// execution(modifiers-pattern? return-type-pattern declaring-type-pattern? name-pattern( param-pattern) throws-pattern?)
+
+
+import com.sdle.pro1.eosb.service.MathService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication implements CommandLineRunner {
+	@Autowired
+	private MathService mathService;
+	@Override
+	public void run(String... args) throws Exception {
+         int r=mathService.sum(4,5);
+          r=mathService.sum(4,5,6);
+		  r=mathService.sub(5,4);
+	}
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+
+	}
+
+}
+

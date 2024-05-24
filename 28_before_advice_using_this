@@ -1,0 +1,164 @@
+package com.sdle.pro1.eosb.service;
+
+
+public interface ReportGenerator {
+     void generate();
+}
+
+
+
+@Service
+public class PdfReportGenerator implements ReportGenerator {
+    @Override
+    public void generate() {
+        System.out.println("Generate PDf Generator");
+    }
+}
+
+
+
+
+@Service
+public class ExelReportGenerator implements ReportGenerator {
+    @Override
+    public void generate() {
+        System.out.println("Generate exel generator");
+    }
+}
+
+
+
+@Service
+public class TextTypeReportGenerator implements ReportGenerator {
+    @Override
+    public void generate() {
+        System.out.println("Generate TextType Generator");
+    }
+}
+
+
+@Service
+public class CSVReportGenerator extends TextTypeReportGenerator{
+    @Override
+    public void generate() {
+        System.out.println("Generate CSV Generator");
+    }
+}
+
+
+
+
+@Slf4j
+@Aspect
+@Component
+public class SimpleAspect {
+
+
+    @Before(value = "this(com.sdle.pro1.eosb.service.ReportGenerator) && target(com.sdle.pro1.eosb.service.impl.TextTypeReportGenerator)",argNames = "jp")
+    public void beforeAdvice(JoinPoint jp){
+        System.out.println("--------Before advice-------");
+    }
+
+
+
+    @Around(value = "@annotation(com.sdle.pro1.eosb.annotation.Retry) && @annotation(retry)",argNames = "pjp,retry")
+    public Object retryAnnotaionProcessor(ProceedingJoinPoint pjp, Retry retry) throws Throwable {
+        Class<?> exception=retry.exception();
+        int retryAttempts=retry.retryTime();
+        long intervalTime=retry.intervalTime();
+        Object data=null;
+        Throwable actualExecption=null;
+        for(int i=0;i<=retryAttempts;i++){
+            if(i>0){
+                 log.warn("method call {} is retrying.... {}",pjp.getSignature().getName(),i);
+            }
+            try {
+                data=pjp.proceed();
+                break;
+            }
+            catch (Throwable ex){
+                 actualExecption=ex;
+                  if(ex.getClass()==exception){
+                       sleep(intervalTime);
+                  }
+                  else {
+                      break;
+                  }
+            }
+        }
+        if(data==null && actualExecption!=null){
+            throw actualExecption;
+        }
+        return data;
+
+    }
+    public void sleep(long ms){
+        try {
+            Thread.sleep(ms);
+        }
+        catch (InterruptedException ingore){
+
+        }
+    }
+
+
+
+
+
+
+/*
+    @Before(value = "execution(* com.sdle.pro1.eosb.service.MathService.sum(int,long)) && this(_this) && target(_target) ",argNames = "jp,_this,_target")
+    public void beforeLog(JoinPoint jp,Object _this,Object _target){
+        System.out.println(_this + " " + _target);
+         System.out.println("--------------sum will execution now---------------"+jp.getThis()+" "+jp.getTarget());
+     }
+
+     @After("within(com.sdle.pro1.eosb.service.*)")
+     public void afterLog(){
+         System.out.println("---------------sum will execution end--------------");
+     }
+
+ */
+ 
+}
+// execution(modifiers-pattern? return-type-pattern declaring-type-pattern? name-pattern( param-pattern) throws-pattern?)
+
+
+
+
+
+
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication implements CommandLineRunner {
+
+	@Autowired
+	private MathService mathService;
+	@Autowired
+	private SimpleMathService simpleMathService;
+	@Autowired
+	EngineeringOnSpringbootApplication engineeringOnSpringbootApplication;
+	@Autowired
+	private RemoteServerCallService rem;
+	@Autowired
+    @Qualifier("CSVReportGenerator")
+	private ReportGenerator reportGenerator;
+	public int sum(int a,int b){
+		int c=a+b;
+		System.out.println("main-sum= "+c);
+		return c;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+          reportGenerator.generate();
+	}
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+
+	}
+
+}
+

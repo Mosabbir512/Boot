@@ -1,0 +1,86 @@
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Retry {
+
+    Class<? extends Throwable> exception() default RuntimeException.class;
+    int retryTime() default 1;
+    long intervalTime() default 3000L;
+    
+}
+
+
+
+
+@Aspect
+@Component
+public class SimpleAspect {
+
+    @Around(value = "@annotation(com.sdle.pro1.eosb.annotation.Retry)")
+    public Object retryAnnotaionProcessor(){
+
+        return "sakib harse";   // we can send data like this
+    }
+
+    @Before(value = "execution(* com.sdle.pro1.eosb.service.MathService.sum(int,long)) && this(_this) && target(_target) ",argNames = "jp,_this,_target")
+    public void beforeLog(JoinPoint jp,Object _this,Object _target){
+        System.out.println(_this + " " + _target);
+         System.out.println("--------------sum will execution now---------------"+jp.getThis()+" "+jp.getTarget());
+     }
+
+     @After("within(com.sdle.pro1.eosb.service.*)")
+     public void afterLog(){
+         System.out.println("---------------sum will execution end--------------");
+     }
+}
+
+
+
+
+@Service
+public class RemoteServerCallService {
+       @Autowired
+       private RestTemplate restTemplate;
+       @Retry(exception = ResourceAccessException.class,retryTime = 3,intervalTime = 4000L)
+        public  String getdata(){
+             return restTemplate.getForObject("http://localhost:3000/api/app/info",String.class);
+        }
+}
+
+
+
+
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication implements CommandLineRunner {
+
+	@Autowired
+	private MathService mathService;
+	@Autowired
+	private SimpleMathService simpleMathService;
+	@Autowired
+	EngineeringOnSpringbootApplication engineeringOnSpringbootApplication;
+	@Autowired
+	private RemoteServerCallService rem;
+
+
+	public int sum(int a,int b){
+		int c=a+b;
+		System.out.println("main-sum= "+c);
+		return c;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		System.out.println(rem.getdata());
+
+	}
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+
+	}
+
+}
+
+

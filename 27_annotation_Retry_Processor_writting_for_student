@@ -1,0 +1,111 @@
+@Slf4j
+@Aspect
+@Component
+public class SimpleAspect {
+    @Around(value = "@annotation(com.sdle.pro1.eosb.annotation.Retry) && @annotation(retry)",argNames = "pjp,retry")
+    public Object retryAnnotaionProcessor(ProceedingJoinPoint pjp, Retry retry) throws Throwable {
+        Class<?> exception=retry.exception();
+        int retryAttempts=retry.retryTime();
+        long intervalTime=retry.intervalTime();
+        Object data=null;
+        Throwable actualExecption=null;
+        for(int i=0;i<=retryAttempts;i++){
+            if(i>0){
+                 log.warn("method call {} is retrying.... {}",pjp.getSignature().getName(),i);
+            }
+            try {
+                data=pjp.proceed();
+                break;
+            }
+            catch (Throwable ex){
+                 actualExecption=ex;
+                  if(ex.getClass()==exception){
+                       sleep(intervalTime);
+                  }
+                  else {
+                      break;
+                  }
+            }
+        }
+        if(data==null && actualExecption!=null){
+            throw actualExecption;
+        }
+        return data;
+
+    }
+    public void sleep(long ms){
+        try {
+            Thread.sleep(ms);
+        }
+        catch (InterruptedException ingore){
+        }
+    }
+/*
+    @Before(value = "execution(* com.sdle.pro1.eosb.service.MathService.sum(int,long)) && this(_this) && target(_target) ",argNames = "jp,_this,_target")
+    public void beforeLog(JoinPoint jp,Object _this,Object _target){
+        System.out.println(_this + " " + _target);
+         System.out.println("--------------sum will execution now---------------"+jp.getThis()+" "+jp.getTarget());
+     }
+
+     @After("within(com.sdle.pro1.eosb.service.*)")
+     public void afterLog(){
+         System.out.println("---------------sum will execution end--------------");
+     }
+     
+ */
+}
+// 
+
+
+
+
+@Service
+public class RemoteServerCallService {
+       @Autowired
+       private RestTemplate restTemplate;
+       @Retry(exception = ResourceAccessException.class,retryTime = 3,intervalTime = 4000L)
+        public  String getdata(){
+             return restTemplate.getForObject("http://localhost:3000/api/app/info",String.class);
+        }
+
+        @Retry(exception = ResourceAccessException.class,retryTime = 5,intervalTime = 2000)
+        public String getStudent(int id){
+           return restTemplate.getForObject("http://localhost:3000/api/student/"+id,String.class);
+        }
+}
+
+
+
+
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication implements CommandLineRunner {
+
+	@Autowired
+	private MathService mathService;
+	@Autowired
+	private SimpleMathService simpleMathService;
+	@Autowired
+	EngineeringOnSpringbootApplication engineeringOnSpringbootApplication;
+	@Autowired
+	private RemoteServerCallService rem;
+
+
+	public int sum(int a,int b){
+		int c=a+b;
+		System.out.println("main-sum= "+c);
+		return c;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		System.out.println(rem.getStudent(105));
+
+	}
+	public static void main(String[] args) throws InterruptedException {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+
+	}
+
+}

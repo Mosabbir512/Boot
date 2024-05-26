@@ -1,0 +1,46 @@
+package com.sdle.pro1.eosb;
+
+
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+
+
+public class EngineeringOnSpringbootApplication{
+    static final int PORT=8080;
+	public static void main(String[] args) throws Exception {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		//SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		System.out.println("Md Mosabbir Hossain");
+		startWebServer();
+	}
+	static void startWebServer() throws Exception {
+		ServerSocket serverSocket=new ServerSocket(PORT);
+		System.out.printf("server is running on port: %d%n", PORT);
+		Socket socket=serverSocket.accept();
+
+		InputStream is=socket.getInputStream();
+		byte[] bytes=new byte[is.available()];
+		int len=is.read(bytes);
+		String requestData=new String(bytes,0,len);
+		System.out.println(requestData);
+
+
+		OutputStream os=socket.getOutputStream();
+
+		os.write("""
+				HTTP/1.1 200 Ok
+				
+				<h1>Simple html</h1>
+				""".getBytes());
+
+       is.close();
+	   os.close();
+	   serverSocket.close();
+	}
+}
+

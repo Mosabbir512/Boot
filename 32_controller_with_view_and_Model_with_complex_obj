@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1> Home Page </h1>
+<p>ID:[[${id}]]</p>
+<p>NAME:[[${name}]]</p>
+<h1>Person info:</h1>
+<p>Id: [[${person.id}]]</p>
+<p>Name: [[${person.name}]]</p>
+<h1>ADdress info:</h1>
+<p>Road No: [[${person.address.roadNo}]]</p>
+<p>House No: [[${person.address.houseNo}]]</p>
+<p>House Name: [[${person.address.houseName}]]</p>
+</body>
+</htm
+
+
+
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/home")
+    public ModelAndView HomePage(Model model){
+         ModelAndView modelAndView=new ModelAndView();
+           modelAndView.setViewName("home");
+
+           Person personObj=new Person(101,"Shakib",new Address(45,4445,"khan Bila"));
+           Map<String ,Object> modelMap=new HashMap<>();
+           modelMap.put("id",101);
+           modelMap.put("name","Sakib");
+           modelMap.put("person",personObj);
+           modelAndView.addAllObjects(modelMap);
+        return modelAndView;
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+        System.out.println("login= "+Thread.currentThread().getName());
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}

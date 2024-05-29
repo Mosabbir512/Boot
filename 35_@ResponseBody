@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1> Home Page </h1>
+<p>ID:[[${id}]]</p>
+<p>NAME:[[${name}]]</p>
+<h1>Person info:</h1>
+<p>Id: [[${p.id}]]</p>
+<p>Name: [[${p.name}]]</p>
+<h1>ADdress info:</h1>
+<p>Road No: [[${p.address.roadNo}]]</p>
+<p>House No: [[${p.address.houseNo}]]</p>
+<p>House Name: [[${p.address.houseName}]]</p>
+</body>
+</html>
+
+
+
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+class HomeServlet extends HttpServlet{
+
+}
+
+@Getter
+@AllArgsConstructor
+class Address{
+    private int roadNo;
+    private int houseNo;
+    private String houseName;
+}
+@Getter
+@AllArgsConstructor
+class Person{
+    private int id;
+    private String name;
+    private Address address;
+}
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @ResponseBody
+    @GetMapping("/home")
+    public Person HomePage(Model model){
+        Person personObj=new Person(101,"Shakib",new Address(45,4445,"khan Bila"));
+        return personObj;
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+        System.out.println("login= "+Thread.currentThread().getName());
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+

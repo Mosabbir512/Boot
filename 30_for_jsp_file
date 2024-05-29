@@ -1,0 +1,48 @@
+//// in pom.xml
+
+	<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
+		</dependency>
+
+
+
+// home.jsp
+<h1>HOME JSP Page!</h1>
+
+// application file
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+
+
+
+//  
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/home")
+    public String HomePage(Model model){
+       model.addAttribute("name","rakib");
+       model.addAttribute("id","it40019");
+        return "home";
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+        System.out.println("login= "+Thread.currentThread().getName());
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+

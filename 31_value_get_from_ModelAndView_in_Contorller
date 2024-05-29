@@ -1,0 +1,55 @@
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.View;
+
+import java.util.HashMap;
+import java.util.Map;
+
+class HomeServlet extends HttpServlet{
+
+}
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/home")
+    public ModelAndView HomePage(Model model){
+         ModelAndView modelAndView=new ModelAndView();
+           modelAndView.setViewName("home");
+           Map<String ,Object> modelMap=new HashMap<>();
+           modelMap.put("id",101);
+           modelMap.put("name","Sakib");
+           modelAndView.addAllObjects(modelMap);
+        return modelAndView;
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+        System.out.println("login= "+Thread.currentThread().getName());
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+

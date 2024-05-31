@@ -1,0 +1,62 @@
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import static org.springframework.web.bind.annotation.RequestMethod.*;
+
+class HomeServlet extends HttpServlet{
+
+}
+
+@Getter
+@AllArgsConstructor
+class Address{
+    private int roadNo;
+    private int houseNo;
+    private String houseName;
+}
+@Getter
+@AllArgsConstructor
+class Person{
+    private int id;
+    private String name;
+    private Address address;
+}
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/home")
+    public String personinfo(){
+       // Person personObj=new Person(101,"Shakib",new Address(45,4445,"khan Bila"));
+        return "<h1>home</h1> home";
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+    @ResponseBody
+    @GetMapping("/login")
+    public String login(){
+        System.out.println("login= "+Thread.currentThread().getName());
+        publisher.publishEvent(new UserLoginEvent());
+        return "login success";
+    }
+}
+
+

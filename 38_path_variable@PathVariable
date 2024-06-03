@@ -1,0 +1,9 @@
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id}/data")
+    public Person personinfo(@PathVariable(name="id")Integer id){
+         return personList.stream()
+                .filter(p->p.getId()==id)
+                .findFirst()
+                .orElse(null);
+
+    }

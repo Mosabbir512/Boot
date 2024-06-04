@@ -1,0 +1,10 @@
+  @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id:NID-\\d{1,5}}/data")
+    public Person personinfo(@PathVariable(name="id")String id){
+         return personList.stream()
+                .filter(p->p.getId()==Integer.parseInt(id.split("-")[1]))
+                .findFirst()
+                .orElse(null);
+
+    }
+//  path_variable_String type_"NID-343434"

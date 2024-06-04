@@ -1,0 +1,24 @@
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id:\\d{1,5}}/data")
+    public Person personinfo(@PathVariable(name="id")Integer id){
+         return personList.stream()
+                .filter(p->p.getId()==id)
+                .findFirst()
+                .orElse(null);
+
+    }
+
+    //  if pathVarible is greater then 5 show => "not Found"
+
+
+
+
+    @RequestMapping(method = GET,path = "/person/{id:\\d+}/data")
+    public Person personinfo(@PathVariable(name="id")Integer id){
+         return personList.stream()
+                .filter(p->p.getId()==id)
+                .findFirst()
+                .orElse(null);
+
+    }
+    //  if pathVariale range is greater then 5 => "Bad Request"

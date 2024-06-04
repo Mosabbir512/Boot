@@ -1,0 +1,6 @@
+
+ @ResponseBody
+    @RequestMapping("/student")
+    public String student(@RequestParam int id, @RequestParam String name, @RequestParam float cgpa){
+        return "STUDENT[%d,%s,%f]".formatted(id,name,cgpa);
+    }

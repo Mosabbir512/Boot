@@ -1,0 +1,60 @@
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import jakarta.servlet.http.HttpServlet;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+import static org.springframework.web.bind.annotation.RequestMethod.*;
+
+class HomeServlet extends HttpServlet{
+
+}
+
+                                                                                                               /// notice herer   ///////
+@Setter
+@Getter
+@ToString
+@NoArgsConstructor
+class Student{
+       private int id;
+       private String name;
+       private float cgpa;
+}
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    List<Person>personList= List.of(
+            new Person(1010,"Hamidur",new Address(20,30,"khan vila")),
+            new Person(2020,"Rakibul",new Address(40,60,"Master Vila"))
+    );
+                                                                                                                 /// notice herer   ///////
+    @ResponseBody
+    @RequestMapping("/student")
+    public String student(@ModelAttribute Student s){
+        return "STUDENT[%d,%s,%f]".formatted(s.getId(),s.getCgpa(),s.getName());
+    }
+
+    
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/person",params = "id")
+    public Person personinfo2(@RequestParam("id") int perid){
+        return personList.stream()
+                .filter(p-> p.getId()==perid)
+                .findFirst()
+                .orElse(null);
+    }
+
+  
+   
+}
+
+

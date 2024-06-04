@@ -1,0 +1,34 @@
+package com.sdle.pro1.eosb.homeController;
+
+import com.sdle.pro1.eosb.event.UserLoginEvent;
+import jakarta.servlet.http.HttpServlet;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
+
+
+@Setter
+@Getter
+@ToString
+@NoArgsConstructor
+class Student{
+       private int id;
+       private String name;
+       private float cgpa;
+}
+@Controller
+public class HomeController {
+
+    @ResponseBody
+    @RequestMapping("/student")
+    public String student(@ModelAttribute Student s){
+        return "STUDENT[%d,%s,%f]".formatted(s.getId(),s.getCgpa(),s.getName());
+    }
+    
+}
+
+

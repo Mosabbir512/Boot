@@ -1,0 +1,8 @@
+// pnf file show
+@ResponseBody
+    @RequestMapping(value = "/data" , produces = MediaType.IMAGE_PNG_VALUE)
+    public InputStreamSource student1() throws Exception{
+        InputStream is=new FileInputStream("/D:/Old D/4th year 1st sem/ICT – 4101 Telecommunication Engineering/1.Telecommunication Engg/Pdf/Screenshot 2024-05-30 103013.png");
+        InputStreamSource streamSource=new InputStreamResource(is);
+        return streamSource;
+    }

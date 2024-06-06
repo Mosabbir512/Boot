@@ -1,0 +1,21 @@
+
+// png_or-pdf_with_path_variable
+  
+    @ResponseBody
+    @RequestMapping(value = "/data/{file_name}" )
+    public ResponseEntity<InputStreamSource> student1(@PathVariable String file_name) throws Exception{
+        File file=new File("/D:/Old D/4th year 1st sem/ICT – 4101 Telecommunication Engineering/1.Telecommunication Engg/Pdf/" + file_name);
+        String[] strings=file.getName().split("\\.");
+        String fileType=strings[strings.length-1];
+        InputStream is=new FileInputStream(file);
+        InputStreamSource streamSource=new InputStreamResource(is);
+
+        MediaType type=MediaType.ALL;
+        if(fileType.equals("png")){
+            type=MediaType.IMAGE_PNG;
+        }else if(fileType.equals("pdf")){
+            type=MediaType.APPLICATION_PDF;
+        }
+        return ResponseEntity.ok().contentType(type).body(streamSource);
+    }
+

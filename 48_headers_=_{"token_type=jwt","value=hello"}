@@ -1,0 +1,7 @@
+  @ResponseBody
+    @RequestMapping(value = "/access/data",headers = {"token_type=jwt" ,"value=hello"})
+    public String acces(@RequestHeader("jwt_token") String token,@RequestHeader("holo") String hello){
+        System.out.println("Token : "+ token  );
+        System.out.println("value : "+ hello);
+        return "Simple Data";
+    }

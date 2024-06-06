@@ -1,0 +1,35 @@
+
+//  response json or xml
+@ResponseBody
+    @RequestMapping(value = "/student",consumes = {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
+    public String student(@RequestBody Student student){
+        return "STUDENT[%d,%s,%f]".formatted(student.getId(),student.getName(),student.getCgpa());
+    }
+
+// String with Json
+@ResponseBody
+    @RequestMapping(value = "/student",produces = MediaType.APPLICATION_JSON_VALUE)
+    public String Stu(){
+        return """
+                {
+                   "id":%d,
+                   "name":"%s",
+                   "cgpa":%f
+                }
+                """.formatted(111,"mijan",4.00);
+    }
+
+  
+//json,xml value pathabo
+  @ResponseBody
+    @RequestMapping(value = "/student",produces ={ MediaType.APPLICATION_JSON_VALUE ,MediaType.TEXT_PLAIN_VALUE})
+    public String Student(){
+        return """
+                {
+                   "id":%d,
+                   "name":"%s",
+                   "cgpa":%f
+                }
+                """.formatted(111,"mijan",4.00);
+    }
+

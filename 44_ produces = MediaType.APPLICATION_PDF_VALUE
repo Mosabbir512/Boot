@@ -1,0 +1,8 @@
+// pdf show
+ @ResponseBody
+    @RequestMapping(value = "/data" , produces = MediaType.APPLICATION_PDF_VALUE)
+    public InputStreamSource student1() throws Exception{
+        InputStream is=new FileInputStream("/D:/Old D/4th year 1st sem/ICT – 4101 Telecommunication Engineering/1.Telecommunication Engg/Pdf/Telecommunication engineering.pdf");
+        InputStreamSource streamSource=new InputStreamResource(is);
+        return streamSource;
+    }

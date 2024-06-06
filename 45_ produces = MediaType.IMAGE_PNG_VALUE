@@ -1,5 +1,5 @@
 
-// pnf file show
+// png file show
 @ResponseBody
     @RequestMapping(value = "/data" , produces = MediaType.IMAGE_PNG_VALUE)
     public InputStreamSource student1() throws Exception{

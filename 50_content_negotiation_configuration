@@ -1,0 +1,34 @@
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+
+     List<Person>personList= List.of(
+            new Person(1010,"Hamidur",new Address(20,30,"khan vila")),
+            new Person(2020,"Rakibul",new Address(40,60,"Master Vila"))
+    );
+
+    
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+        configurer.favorParameter(true)
+                .parameterName("media-type")
+                .defaultContentType(MediaType.APPLICATION_JSON)
+                .mediaType("xml",MediaType.APPLICATION_XML)
+                .mediaType("json",MediaType.APPLICATION_JSON);
+    }
+}
+
+    
+    
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id}")
+    public ResponseEntity<Person> personinfo(@PathVariable(name="id") int id,
+                                             @RequestHeader(value =HttpHeaders.CONTENT_TYPE ,required = false) String conType){
+        var person=personList.stream()
+                .filter(p->p.getId()==id)
+                .findFirst()
+                .orElse(null);
+
+      
+        return ResponseEntity.ok().contentType(MediaType.valueOf(conType)).body(person);
+    }

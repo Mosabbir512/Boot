@@ -1,0 +1,73 @@
+
+@Getter
+@AllArgsConstructor
+class Address{
+    private int roadNo;
+    private int houseNo;
+    private String houseName;
+}
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+class Person{
+    private int id;
+    private String name;
+    private Address address;
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id,name);
+    }
+}
+
+@Setter
+@Getter
+@ToString
+@NoArgsConstructor
+class Student{
+       private int id;
+       private String name;
+       private float cgpa;
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id,name,cgpa);
+    }
+}
+
+@RequestMapping("/api/v1")
+@Controller
+public class HomeController {
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    List<Person>personList= List.of(
+            new Person(1010,"Hamidur",new Address(20,30,"khan vila")),
+            new Person(2020,"Rakibul",new Address(40,60,"Master Vila"))
+    );
+
+    @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id}")
+    public ResponseEntity<Person> personinfo(@PathVariable(name="id") int id,@RequestHeader(value =HttpHeaders.IF_NONE_MATCH ,required = false) String eTag){
+        var person=personList.stream()
+                .filter(p->p.getId()==id)
+                .findFirst()
+                .orElse(null);
+
+         String hash=String.valueOf(person.hashCode());
+        if(eTag==null  || !eTag.equals("\""+hash+"\"")){
+             return ResponseEntity.ok().eTag(hash).body(person);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+    }
+
+    @ResponseStatus(code = HttpStatus.CREATED)
+    @PutMapping("/person/update/{id}")
+    public void updatePerson(@RequestBody Person person,@PathVariable("id") int id){
+       Person p=personList.stream().filter(p1->p1.getId()==id).findFirst().get();
+       p.setId(person.getId());
+       p.setName(person.getName());
+    }
+}

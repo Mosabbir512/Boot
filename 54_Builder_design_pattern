@@ -1,0 +1,77 @@
+package com.sdle.pro1.eosb.Pattern;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.util.List;
+
+public class Main {
+    public static void main(String[] args) {
+        var student=new Student.Builder().id(101).cgpa(3.4f).build();
+        System.out.println(student);
+    }
+}
+
+@Setter
+@Getter
+@NoArgsConstructor
+@ToString
+class Address{
+    private int roadNo;
+    private int houseNo;
+    private String hosueName;
+}
+@Setter
+@ToString
+@NoArgsConstructor
+class Student{
+    private int id;
+    private String name;
+    private float cgpa;
+    private Address address;
+    private String dept;
+    private List<String> courses;
+
+    private Student(int id, String name, float cgpa, Address address, String dept, List<String> courses) {
+        this.id = id;
+        this.name = name;
+        this.cgpa = cgpa;
+        this.address = address;
+        this.dept = dept;
+        this.courses = courses;
+    }
+
+    public static class Builder{
+        private int id;
+        private String name;
+        private float cgpa;
+        private Address address;
+        private String dept;
+        private List<String>courses;
+
+        public Builder id(int id){
+            this.id=id;
+            return this;
+        }
+        public Builder name(String name){
+            this.name=name;
+            return this;
+        }
+        public  Builder cgpa(float cgpa){
+            this.cgpa=cgpa;
+            return this;
+        }
+        public Builder dept(String dept){
+            this.dept=dept;
+            return this;
+        }
+
+        public Student build(){
+            return new Student(id,name,cgpa,address,dept,courses);
+        }
+
+    }
+
+}

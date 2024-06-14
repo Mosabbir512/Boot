@@ -1,0 +1,20 @@
+ @ResponseBody
+    @RequestMapping(method = GET,path = "/person/{id}")
+    public ResponseEntity<?> personinfo(@PathVariable(name="id") int id){
+         try {
+             var person = personList.stream()
+                     .filter(p -> p.getId() == id)
+                     .findFirst()
+                     .orElseThrow(() -> new RuntimeException("person not found by person id: [%d]".formatted(id)));
+             return ResponseEntity.ok(person);
+         }catch (Exception ex){
+             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                     Map.of(
+                             "timestamp",Instant.now(),
+                             "message",ex.getMessage(),
+                             "another info","you can add anything"
+                     )
+             );
+         }
+
+    }

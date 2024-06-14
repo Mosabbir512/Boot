@@ -1,0 +1,125 @@
+package com.sdle.pro1.eosb.Pattern;
+
+import lombok.*;
+import org.springframework.aop.scope.ScopedProxyUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Main {
+    public static void main(String[] args) {
+          var student=Student
+                  .id(101)
+                  .cgpa(3.4f)
+                  .dept("ict")
+                  .houseName("khan vila")
+                  .addCourses("c++")
+                  .addCourses("Html")
+                  .build();
+        System.out.println(student);
+    }
+}
+
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+class Address{
+    private int roadNo;
+    private int houseNo;
+    private String houseName;
+}
+@Setter
+@ToString
+
+class Student{
+    private int id;
+    private String name;
+    private float cgpa;
+    private Address address;
+    private String dept;
+    private List<String> courses;
+
+    private Student(CourseBuilder courseBuilder) {
+            this.courses=courseBuilder.courses;
+            AddressBuilder addressBuilder=courseBuilder.addressBuilder;
+            address=new Address(addressBuilder.roadNo, addressBuilder.houseNo, addressBuilder.houseName);
+            BasicBuilder basicBuilder=addressBuilder.basicBuilder;
+            id=basicBuilder.id;
+            name=basicBuilder.name;
+            cgpa=basicBuilder.cgpa;
+            dept=basicBuilder.dept;
+
+    }
+
+    public static BasicBuilder id(int id){
+        return new BasicBuilder(id);
+    }
+    public static class BasicBuilder{
+        private int id;
+        private String name;
+        private float cgpa;
+        private String dept;
+
+        private BasicBuilder(int id){
+            this.id=id;
+        }
+
+        public BasicBuilder name(String name){
+            this.name=name;
+            return this;
+        }
+        public  BasicBuilder cgpa(float cgpa){
+            this.cgpa=cgpa;
+            return this;
+        }
+        public AddressBuilder dept(String dept){
+            this.dept=dept;
+            return new AddressBuilder(this);
+        }
+
+    }
+    public static class AddressBuilder{
+        private int roadNo;
+        private int houseNo;
+        private String houseName;
+
+        private BasicBuilder basicBuilder;
+
+        public AddressBuilder(BasicBuilder basicBuilder) {
+            this.basicBuilder = basicBuilder;
+        }
+
+        public  AddressBuilder roadNo(int roadNo){
+            this.roadNo=roadNo;
+            return this;
+        }
+        public AddressBuilder houseNo(int houseNo){
+            this.houseNo=houseNo;
+            return this;
+        }
+        public CourseBuilder houseName(String  houseName){
+            this.houseName=houseName;
+            return new CourseBuilder(this);
+        }
+
+    }
+
+    public static class CourseBuilder{
+          private AddressBuilder addressBuilder;
+          private List<String>courses=new ArrayList<>();
+          public CourseBuilder(AddressBuilder addressBuilder){
+              this.addressBuilder=addressBuilder;
+          }
+
+          public CourseBuilder addCourses(String courseName){
+              this.courses.add(courseName);
+              return this;
+          }
+          public Student build(){
+               return new Student(this);
+          }
+    }
+
+}

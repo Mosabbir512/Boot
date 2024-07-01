@@ -1,0 +1,126 @@
+                             //  home.ejs   //
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NODE Application</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+<h1> Home Page </h1>
+Student id: <input type="number" id="sid">
+<button onclick="fetch()">Fetch Student</button>
+<br/> <br/>
+<table border="1">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Cgpa</th>
+    </tr>
+    <tr>
+        <td id="id">---- Id ----</td>
+        <td id="name">----Name-----</td>
+        <td id="cgpa">----Cgpa----</td>
+    </tr>
+</table>
+
+<br/><br/>
+
+ID: <input type="number " id="s_id"><br/>
+NAME: <input type="text" id="s_name"><br/>
+CGPA: <input type="number" id="s_cgpa"><br/>
+<button onclick="save()">save Student</button>
+
+<script>
+    function fetch(){
+        let id= $("#sid").val();
+        $.get(`http://localhost:8080/api/v1/student2?id=${id}`,function (stu){
+            $("#id").text(stu.id);
+            $("#name").text(stu.name);
+            $("#cgpa").text(stu.cgpa);
+        });
+    }
+
+    function save(){
+        let stu={
+            "id":$("#s_id").val(),
+            "name":$("#s_name").val(),
+            "cgpa":$("#s_cgpa").val()
+        };
+        $.post({
+            url:'http://localhost:8080/api/v1/save-student',
+            contentType:'application/json',
+            data:JSON.stringify(stu),
+            success:function (s){
+                console.log(s);
+            },
+            error:function (e){
+                console.log(e);
+            }
+        });
+    }
+
+
+</script>
+</body>
+</html>
+
+
+
+                          //   app.js    //
+const express=require('express');
+const app=express();
+
+
+app.set("view engine","ejs");
+app.set("views",__dirname + "/views");
+
+
+app.get('/',function (request,response){
+    // console.log(request);
+    response.render('home');
+});
+
+const port=3000;
+app.listen(port,()=>console.log(`server is running on port ${port}`));
+
+
+
+                               //    simpleController    //
+@RestController
+@RequestMapping("/api/v1")
+@CrossOrigin(origins ="http://localhost:3000")
+public class SimpleApiController {
+
+    final  static List<Student> students=new ArrayList<>();
+    static  {
+        students.add(new Student(101,"Rakib",3.55f));
+        students.add(new Student(102,"Murad", 3.88f));
+    }
+
+
+    @GetMapping("/student")
+    public ResponseEntity<?> student(@RequestParam("id") int id){
+        var optinalStudent=students.stream().filter(s->s.id()==id).findFirst();
+        if(optinalStudent.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+          return ResponseEntity.ok(optinalStudent.get());
+    }
+
+    @GetMapping("/student2")
+    public ResponseEntity<?> student2(@RequestParam("id") int id){
+        var optinalStudent=students.stream().filter(s->s.id()==id).findFirst();
+        if(optinalStudent.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(optinalStudent.get());
+    }
+
+    
+
+
+}
+
+

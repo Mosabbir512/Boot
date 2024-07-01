@@ -1,0 +1,50 @@
+package com.sdle.pro1.eosb.Controller;
+
+import com.sdle.pro1.eosb.model.Student;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1")
+@CrossOrigin(origins ="http://localhost:3000"
+, methods = {RequestMethod.GET,RequestMethod.POST}
+)
+public class SimpleApiController {
+
+    final  static List<Student> students=new ArrayList<>();
+    static  {
+        students.add(new Student(101,"Rakib",3.55f));
+        students.add(new Student(102,"Murad", 3.88f));
+    }
+
+
+    @GetMapping("/student")
+    public ResponseEntity<?> student(@RequestParam("id") int id){
+        var optinalStudent=students.stream().filter(s->s.id()==id).findFirst();
+        if(optinalStudent.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+          return ResponseEntity.ok(optinalStudent.get());
+    }
+
+    @GetMapping("/student2")
+    public ResponseEntity<?> student2(@RequestParam("id") int id){
+        var optinalStudent=students.stream().filter(s->s.id()==id).findFirst();
+        if(optinalStudent.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(optinalStudent.get());
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/save_student")
+    public void saveStudent(@RequestBody Student student){
+        students.add(student);
+    }
+
+
+}

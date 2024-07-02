@@ -1,0 +1,44 @@
+package com.sdle.pro1.eosb.Controller;
+
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.Map;
+
+
+@Controller
+public class HomeController {
+
+    @GetMapping("/about")
+    public String aboutPage(){
+        return "about";
+    }
+
+
+    @GetMapping("/home")
+    public String sir(){
+        return "home";
+    }
+    @CrossOrigin(
+            origins ="http://localhost:3000",
+            methods = {RequestMethod.GET,RequestMethod.POST},
+            allowedHeaders = {HttpHeaders.CONTENT_TYPE,HttpHeaders.AUTHORIZATION},
+            exposedHeaders = {"custom-header"},
+            maxAge = 10
+    )
+    @GetMapping("/data")
+    public ResponseEntity<?> data(){
+        return ResponseEntity.ok(
+                Map.of(
+                        "data","simple data",
+                        "timestamp",Instant.now()
+                )
+        );
+    }
+}
+
+

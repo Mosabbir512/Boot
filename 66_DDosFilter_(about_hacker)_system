@@ -1,0 +1,50 @@
+package com.sdle.pro1.eosb.filter;
+
+import jakarta.servlet.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+@Component
+@Order(Integer.MIN_VALUE)
+@EnableScheduling
+public class DDosFilter implements Filter {
+
+    private final ConcurrentMap<String, AtomicInteger>map=new ConcurrentHashMap<>();
+    private static final int MAX_REQ=5;
+
+    @Scheduled(fixedDelay = 10_000)
+    public void clean(){
+        if(!map.isEmpty()){
+            map.clear();
+        }
+    }
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest request=(HttpServletRequest)servletRequest;
+        var ip=request.getRemoteAddr();
+        var count=map.computeIfAbsent(ip,k->new AtomicInteger());
+        if(count.getAndIncrement()>MAX_REQ){
+            HttpServletResponse response= (HttpServletResponse) servletResponse;
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType("application/json");
+            response.getWriter().write(
+                    Map.of("message", "I know, you are hacker bro").toString()
+            );
+            return;
+        }
+       filterChain.doFilter(servletRequest,servletResponse);
+
+    }
+}

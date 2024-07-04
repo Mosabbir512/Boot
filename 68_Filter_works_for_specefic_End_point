@@ -1,0 +1,24 @@
+
+public class MyLoggerFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("-----My logger Filter-------");
+        filterChain.doFilter(request,response);
+    }
+}
+
+
+
+@Configuration
+public class AppConfig {
+    @Autowired
+    private Environment env;
+    @Bean
+    public FilterRegistrationBean<MyLoggerFilter> myFilterBean(){
+        FilterRegistrationBean<MyLoggerFilter> registrationBean=new FilterRegistrationBean<>();
+        registrationBean.setFilter(new MyLoggerFilter());
+        registrationBean.setOrder(Integer.MIN_VALUE+1);
+        registrationBean.addUrlPatterns("/api/v1/*");
+        return registrationBean;
+    }
+}

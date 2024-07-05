@@ -1,0 +1,83 @@
+import java.io.IOException;
+public class IPLoggerFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("IP address: "+request.getRemoteAddr());
+        filterChain.doFilter(request,response);
+    }
+}
+
+
+import java.io.IOException;
+public class TimeLoggerFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        long st=System.currentTimeMillis();
+        filterChain.doFilter(request,response);
+        long et=System.currentTimeMillis();
+        System.out.println("Total time consumed: " +(et-st) + "ms");
+    }
+}
+
+
+
+import java.io.IOException;
+public class ThreadLoggerFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("Request handle by thread: "+Thread.currentThread().getName());
+        filterChain.doFilter(request,response);
+    }
+}
+
+
+@Configuration
+public class AppConfig {
+    @Bean
+    public FilterRegistrationBean<MyLoggerFilter> myFilterBean(){
+        FilterRegistrationBean<MyLoggerFilter> registrationBean=new FilterRegistrationBean<>();
+        registrationBean.setFilter(new MyLoggerFilter());
+        registrationBean.setOrder(Integer.MIN_VALUE+1);
+        //registrationBean.addUrlPatterns("/api/v1/*");
+        return registrationBean;
+    }
+}
+
+
+
+public class MyLoggerFilter extends OncePerRequestFilter {
+    private final List<Filter> filter=List.of(
+            new ThreadLoggerFilter(),
+            new IPLoggerFilter(),
+            new TimeLoggerFilter()
+    );
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        MyLoggerFilterChain myLoggerFilterChain=new MyLoggerFilterChain(filterChain);
+        myLoggerFilterChain.doFilter(request,response);
+    }
+    private class MyLoggerFilterChain implements FilterChain{
+        private final FilterChain orginalFilterChain;
+        int current_position=0;
+        public MyLoggerFilterChain(FilterChain orginalFilterChain) {
+            this.orginalFilterChain = orginalFilterChain;
+        }
+
+        @Override
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse) throws IOException, ServletException {
+            if(current_position==filter.size()){
+                orginalFilterChain.doFilter(servletRequest,servletResponse);
+            }
+            else {
+                current_position++;
+                filter.get(current_position-1).doFilter(servletRequest,servletResponse,this);
+            }
+        }
+    }
+}
+
+
+
+
+

@@ -1,0 +1,52 @@
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Autowired
+    private SimpleInterceptor simpleInterceptor;
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(simpleInterceptor).addPathPatterns("/**");
+    }
+}
+
+
+@Controller
+public class AppController {
+
+    @GetMapping("/home")
+    public String home(HttpServletRequest request, Model model){
+       model.addAttribute("Student","Rakib");
+        return "home";
+    }
+    @GetMapping("/about")
+    public String about(){
+        return "about";
+    }
+
+}
+
+
+@Slf4j
+@Component
+public class SimpleInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        long st=System.currentTimeMillis();
+        request.setAttribute("start_time",st);
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+             HandlerInterceptor.super.postHandle(request,response,handler,modelAndView);
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        long st= (long) request.getAttribute("start_time");
+        long et=System.currentTimeMillis();
+        log.info("Total time consumed : {}",et-st);
+    }
+}
+
+
+

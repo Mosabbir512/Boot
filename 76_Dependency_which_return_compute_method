@@ -1,0 +1,61 @@
+package com.sdlc.pro.esob.controller;
+import com.sdlc.pro.analytics.compute.MyCompute;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+@Controller
+public class AppController {
+    @Autowired
+    private MyCompute compute;
+
+    @GetMapping("/home")
+    public String sakib(){
+        return "home";
+    }
+    @GetMapping("/about")
+    public String about(){
+        return "about";
+    }
+    @GetMapping("sum/{values}")
+    public ResponseEntity<?>getSum(@PathVariable("values") String values){
+          String[] stringArray=values.split(",");
+          int[] arr=new int[stringArray.length];
+          for(int i=0;i<stringArray.length;i++){
+              arr[i]=Integer.parseInt(stringArray[i]);
+          }
+         long ans= compute.sum(arr);
+        return ResponseEntity.ok(ans);
+    }
+}
+
+
+
+
+
+
+
+
+package com.sdlc.pro.analytics.autoconfig;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+@Configuration
+@ComponentScan(basePackages = "com.sdlc.pro.analytics")
+@ConditionalOnProperty(value = "sdlc.pro.analytics.enable",havingValue = "true")
+public class AnalyticToolAutoconfiguration {
+
+}
+ 
+
+package com.sdlc.pro.analytics.compute;
+public class MyCompute{
+    public long sum(int[] array){
+        long sum=0;
+        for(int value:array)
+            sum+=value;
+        return sum;
+    }
+}
+

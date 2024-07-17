@@ -1,0 +1,17 @@
+@ResponseBody
+    @GetMapping("/get-progress")
+    public void progressBar(HttpServletResponse response) throws IOException {
+        var writer=response.getWriter();
+        for(int i=1;i<100;i++){
+              writer.println(i+"%");
+              writer.flush();
+            sleep(100);
+        }
+
+    }
+    private void sleep(long ms){
+        try{
+              Thread.sleep(ms);
+        }
+        catch (InterruptedException ignore){}
+    }

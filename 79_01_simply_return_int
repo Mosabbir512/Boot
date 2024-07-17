@@ -1,0 +1,8 @@
+ @ResponseBody
+    @GetMapping("/get-progress")
+    public int progressBar(){
+        for(int i=0;i<100;i++){
+            return i;
+        }
+        return 0;
+    }

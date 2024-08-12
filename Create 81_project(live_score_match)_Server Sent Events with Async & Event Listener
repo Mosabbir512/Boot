@@ -1,0 +1,132 @@
+package com.sdle.pro1.eosb.model;
+public record MatchInfo (String team1,String team2,int run,float over,int wicket){
+}
+
+
+package com.sdle.pro1.eosb.model;
+public record FootballMatchInfo(String team1,String team2,int goal1,int goal2,double time) {
+}
+
+
+package com.sdle.pro1.eosb.event;
+import com.sdle.pro1.eosb.model.MatchInfo;
+import lombok.Getter;
+import org.springframework.context.ApplicationEvent;
+
+@Getter
+public class CricketMatchUpdateEvent extends ApplicationEvent {
+    private MatchInfo matchInfo;
+    public CricketMatchUpdateEvent(Object source,MatchInfo matchInfo) {
+        super(source);
+        this.matchInfo=matchInfo;
+    }
+}
+
+
+package com.sdle.pro1.eosb.handler;
+
+import com.sdle.pro1.eosb.event.CricketMatchUpdateEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+@Component
+public class MatchEventHandler {
+    private final Set<SseEmitter> sseEmitters=new CopyOnWriteArraySet<>();
+    public SseEmitter subcribe(){
+        SseEmitter emitter=new SseEmitter((long) Integer.MAX_VALUE);
+        emitter.onError(err->sseEmitters.remove(emitter));
+        emitter.onTimeout(()->sseEmitters.remove(emitter));
+        emitter.onCompletion(()->sseEmitters.remove(emitter));
+        sseEmitters.add(emitter);
+        return emitter;
+    }
+    @Async
+    @EventListener
+    public void cricketMatchUpdate(CricketMatchUpdateEvent event){
+        for(SseEmitter emitter:sseEmitters){
+            try {
+              var eventBuilder=SseEmitter.event().
+                      name("cricket_match")
+                      .data(event.getMatchInfo());
+              emitter.send(eventBuilder);
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
+            }
+        }
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdlc.pro.analytics.compute.MyCompute;
+import com.sdle.pro1.eosb.event.CricketMatchUpdateEvent;
+import com.sdle.pro1.eosb.handler.MatchEventHandler;
+import com.sdle.pro1.eosb.model.FootballMatchInfo;
+import com.sdle.pro1.eosb.model.MatchInfo;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.catalina.Executor;
+import org.apache.catalina.core.ApplicationFilterChain;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+
+
+@Controller
+public class AppController {
+    @Autowired
+    private MyCompute myCompute;
+    @Autowired
+    private MatchEventHandler matcheventHandler;
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @GetMapping("/cricket-match")
+    public String cricketMatch(){
+        return "cricket_match";
+    }
+
+    @GetMapping("/get-match-update")
+    public SseEmitter progressBar(HttpServletResponse response) throws IOException {
+        return matcheventHandler.subcribe();
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/update-cricket-match-data")
+    public void updateMatchData(@RequestBody MatchInfo info){
+         var event=new CricketMatchUpdateEvent(this,info);
+         publisher.publishEvent(event);
+
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/update-football-match-data")
+    public void updateMatchData(@RequestBody FootballMatchInfo info){
+
+    }
+
+
+
+
+}
+

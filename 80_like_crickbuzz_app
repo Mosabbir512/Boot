@@ -1,0 +1,71 @@
+package com.sdle.pro1.eosb.model;
+public record MatchInfo (String team1,String team2,int run,float over,int wicket){
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cricket Match</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+<h1><span id="team1">_</span> VS <span id="team2">_</span> </h1>
+<h1>Run: <span id="run">_</span> </h1>
+<h1>Over: <span id="over">_</span></h1>
+<h1>Wicket:<span id="wicket">_</span> </h1>
+<script>
+    function fetchMatchUpdate(){
+        const eventSource=new EventSource("/get-match-update");
+        eventSource.onmessage=function (event){
+            console.log(event);
+            const data=JSON.parse(event.data);
+
+            $("#team1").text(data['team1']);
+            $("#team2").text(data['team2']);
+            $("#run").text(data['run']);
+            $("#over").text(data['over']);
+            $("#wicket").text(data['wicket']);
+        }
+    }
+    fetchMatchUpdate();
+</script>
+</body>
+</html>
+
+
+@Controller
+public class AppController {
+ private final Set<SseEmitter> sseEmitters=new CopyOnWriteArraySet<>();
+
+    @GetMapping("/cricket-match")
+    public String cricketMatch(){
+        return "cricket_match";
+    }
+    @GetMapping("/get-match-update")
+    public SseEmitter progressBar(HttpServletResponse response) throws IOException {
+        SseEmitter emitter=new SseEmitter((long)Integer.MAX_VALUE);
+        emitter.onError(throwable -> sseEmitters.remove(emitter));
+        emitter.onTimeout(()->sseEmitters.remove(emitter));
+        sseEmitters.add(emitter);
+        return emitter;
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/update-match-data")
+    public void updateMatchData(@RequestBody MatchInfo info){
+        for(SseEmitter emitter:sseEmitters){
+            try {
+                emitter.send(info);
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
+            }
+        }
+    }
+
+
+}
+
+

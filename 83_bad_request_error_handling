@@ -1,0 +1,33 @@
+package com.sdle.pro1.eosb.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class MathException extends RuntimeException{
+    public MathException(String message) {
+        super(message);
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.exception.MathException;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+@Controller
+public class AppController {
+    @ResponseBody
+    @RequestMapping("/calculate")
+       public int calculate(@RequestParam("a") int a,@RequestParam("b") int b){
+        if(b==0){
+            throw new MathException("the value of 'b' can't be zero bro");
+        }
+           return a/b;
+       }
+}
+

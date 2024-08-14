@@ -1,0 +1,27 @@
+package com.sdle.pro1.eosb.contorller;
+
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+//@Controller
+@RequestMapping("/error")
+public class CustomErrorController implements ErrorController {
+
+    @ResponseBody
+    @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
+    public String htmlErrorPage(){
+        return "<h1>SomeThing went wrong</h1>";
+    }
+    @ResponseBody
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> errorPage(){
+        return ResponseEntity.ok("Error occured!");
+    }
+
+}
+

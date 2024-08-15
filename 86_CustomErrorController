@@ -1,0 +1,50 @@
+package com.sdle.pro1.eosb.contorller;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
+import org.springframework.boot.web.error.ErrorAttributeOptions;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+
+import java.util.Map;
+
+@Controller
+@RequestMapping("/error")
+public class CustomErrorController implements ErrorController {
+    @Autowired
+    private ErrorAttributes errorAttributes;
+
+    @ResponseBody
+    @GetMapping(produces = MediaType.TEXT_HTML_VALUE)
+    public String htmlErrorPage(HttpServletRequest request){
+        WebRequest webRequest=new ServletWebRequest(request);
+        Map<String,Object> map=errorAttributes.getErrorAttributes(webRequest, ErrorAttributeOptions.defaults());
+        return """
+                <h1>Something went wrong</h1>
+                timestamp: %s<br/>
+                status: %s<br/>
+                error: %s<br/>
+                message: %s<br/>
+                stack-trace: %s<br/>
+                path: %s
+                """.formatted(map.get("timestamp"),map.get("status"),map.get("error"),map.get("message"),map.get("trace"),map.get("path"));
+    }
+    @ResponseBody
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> errorPage(HttpServletRequest request){
+        WebRequest webRequest=new ServletWebRequest(request);
+        Map<String,Object> map=errorAttributes.getErrorAttributes(webRequest, ErrorAttributeOptions.defaults());
+        return ResponseEntity.status((int)map.get("status")).body(map);
+    }
+
+}
+

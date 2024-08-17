@@ -1,0 +1,89 @@
+package com.sdle.pro1.eosb.exhandler;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    @ResponseBody
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Exception.class)
+    public String errorhandler(Exception ex){
+        return "EX: "+ex.getMessage();
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.exception.AccessDenied;
+import com.sdle.pro1.eosb.exception.MathException;
+import org.springframework.boot.autoconfigure.web.ErrorProperties;
+import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+public class AppController {
+
+
+    @ResponseBody
+    @RequestMapping("/calculate")
+       public int calculate(@RequestParam("a") int a,@RequestParam("b") int b){
+        if(b==0){
+            throw new MathException("the value of 'b' can't be zero bro");
+        }
+           return a/b;
+       }
+
+       @ResponseBody
+       @RequestMapping("/hello")
+        public String con(){
+        if(1==1)
+            throw new RuntimeException("Ex.....");
+            return "simple page....";
+       }
+       @ResponseBody
+       @RequestMapping("/access")
+       public String con2(){
+        if(1==1)
+            throw new AccessDenied("Access ani bor!");
+        return "access";
+       }
+
+//       @ResponseBody
+//       @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//       @ExceptionHandler(Exception.class)
+//       public String errorhandler(Exception ex){
+//        return "EX: "+ex.getMessage();
+//       }
+}
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.exception.PageNotFoundException;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class PageController {
+
+    @GetMapping("/home")
+    public String home(){
+        if(1==1)
+            throw new PageNotFoundException("can't found home page!");
+        return "home";
+    }
+
+    @GetMapping("/about")
+    public String about(){
+        return "about";
+    }
+
+}

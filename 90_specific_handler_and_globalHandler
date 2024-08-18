@@ -1,0 +1,176 @@
+package com.sdle.pro1.eosb.exception;
+
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class MathException extends RuntimeException{
+    public MathException(String message) {
+        super(message);
+    }
+}
+
+
+package com.sdle.pro1.eosb.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.FORBIDDEN)
+public class AccessDenied extends RuntimeException{
+    public AccessDenied(String message) {
+        super(message);
+    }
+}
+
+
+package com.sdle.pro1.eosb.exception;
+
+public class PageNotFoundException extends RuntimeException{
+    public PageNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+package com.sdle.pro1.eosb.exhandler;
+
+import com.sdle.pro1.eosb.exception.AccessDenied;
+import com.sdle.pro1.eosb.exception.MathException;
+import com.sdle.pro1.eosb.exception.PageNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.time.Instant;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    @Autowired
+    private ErrorAttributes errorAttributes;
+
+    @ResponseBody
+    @ExceptionHandler(MathException.class)
+    public ResponseEntity<?> mathExceptionHandler(MathException exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage()
+
+                ));
+    }
+
+    @ResponseBody
+    @ExceptionHandler(AccessDenied.class)
+    public ResponseEntity<?> accessDeniedExceptionHandler(HttpServletRequest request,AccessDenied exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage(),
+                        "access_error","while try to access url[%s]".formatted(request.getRequestURI())
+
+                ));
+    }
+
+
+    @ExceptionHandler(PageNotFoundException.class)
+    public String pageExceptionHandler(HttpServletRequest request, PageNotFoundException exception, Model model){
+        model.addAttribute("error",exception.getMessage());
+        return "page_not_found_error";
+    }
+
+    /*
+    @ResponseBody
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Exception.class)
+    public String errorhandler(Exception ex){
+        return "EX: "+ex.getMessage();
+    }
+
+     */
+}
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.exception.AccessDenied;
+import com.sdle.pro1.eosb.exception.MathException;
+import org.springframework.boot.autoconfigure.web.ErrorProperties;
+import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class AppController {
+
+
+    @ResponseBody
+    @RequestMapping("/calculate")
+       public int calculate(@RequestParam("a") int a,@RequestParam("b") int b){
+        if(b==0){
+            throw new MathException("the value of 'b' can't be zero bro");
+        }
+           return a/b;
+       }
+
+       @ResponseBody
+       @RequestMapping("/hello")
+        public String con(){
+        if(1==1)
+            throw new RuntimeException("Ex.....");
+            return "simple page....";
+       }
+       @ResponseBody
+       @RequestMapping("/access")
+       public String con2(){
+        if(1==1)
+            throw new AccessDenied("Access ani bor!");
+        return "access";
+       }
+
+//       @ResponseBody
+//       @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//       @ExceptionHandler(Exception.class)
+//       public String errorhandler(Exception ex){
+//        return "EX: "+ex.getMessage();
+//       }
+}
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.exception.PageNotFoundException;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class PageController {
+
+    @GetMapping("/home")
+    public String home(){
+        if(1==1)
+            throw new PageNotFoundException("can't found home page!");
+        return "access";
+    }
+
+    @GetMapping("/about")
+    public String about(){
+        return "about";
+    }
+
+}

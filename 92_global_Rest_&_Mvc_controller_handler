@@ -1,0 +1,207 @@
+package com.sdle.pro1.eosb.exception;
+
+public class ResourseNotFoundException extends RuntimeException{
+    public ResourseNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MvcControllerIdentifier {
+}
+
+
+
+package com.sdle.pro1.eosb.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RestControllerIdentifier {
+}
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.annotation.MvcControllerIdentifier;
+import com.sdle.pro1.eosb.annotation.RestControllerIdentifier;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import com.sdle.pro1.eosb.model.Student;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@MvcControllerIdentifier
+@Controller
+public class StudentMvcController {
+    private final List<Student> students=new ArrayList<>();
+    public StudentMvcController(){
+        students.add(new Student(101,"Rakib",3.45f));
+        students.add(new Student(102,"Mosa",4.00f));
+    }
+
+    @GetMapping("/student")
+    public String student(@RequestParam("id")int id, Model model){
+        var student= students.stream()
+                .filter(s->s.id()==id)
+                .findFirst()
+                .orElseThrow(()->new ResourseNotFoundException("Student not found by id [%s]".formatted(id)));
+        model.addAttribute("student",student);
+        return "student";
+    }
+}
+
+
+
+
+package com.sdle.pro1.eosb.contorller;
+
+import com.sdle.pro1.eosb.annotation.MvcControllerIdentifier;
+import com.sdle.pro1.eosb.annotation.RestControllerIdentifier;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import com.sdle.pro1.eosb.model.ResponseError;
+import com.sdle.pro1.eosb.model.Student;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RestControllerIdentifier
+@RequestMapping("/api/v1")
+public class StudentController {
+
+    private final List<Student>students=new ArrayList<>();
+    public StudentController(){
+        students.add(new Student(101,"Rakib",3.45f));
+        students.add(new Student(102,"Mosa",4.00f));
+    }
+    @GetMapping("/students")
+    public List<Student>students(){
+        return students;
+    }
+    @GetMapping("/student")
+    public Student student(@RequestParam("id")int id){
+      return   students.stream()
+                .filter(s->s.id()==id)
+                .findFirst()
+                .orElseThrow(()->new ResourseNotFoundException("Student not found by id [%s]".formatted(id)));
+
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.exhandler;
+
+import com.sdle.pro1.eosb.annotation.MvcControllerIdentifier;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+@ControllerAdvice(annotations = MvcControllerIdentifier.class)
+public class GlobalMvcExceptionHandler {
+    @ExceptionHandler(ResourseNotFoundException.class)
+    public String resouceNotFoundHandler(ResourseNotFoundException exception, Model model){
+        model.addAttribute("error",ResourseNotFoundException.class.getSimpleName());
+        model.addAttribute("message",exception.getMessage());
+         return "resource_error";
+    }
+}
+
+
+package com.sdle.pro1.eosb.exhandler;
+
+import com.sdle.pro1.eosb.annotation.RestControllerIdentifier;
+import com.sdle.pro1.eosb.exception.AccessDenied;
+import com.sdle.pro1.eosb.exception.MathException;
+import com.sdle.pro1.eosb.exception.PageNotFoundException;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import com.sdle.pro1.eosb.model.ResponseError;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.Map;
+
+@RestControllerAdvice(annotations = RestControllerIdentifier.class)
+public class GlobalRestExceptionHandler {
+    @Autowired
+    private ErrorAttributes errorAttributes;
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourseNotFoundException.class)
+    public ResponseError resouceNotFound(ResourseNotFoundException exception){
+       return new ResponseError(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                exception.getMessage()
+
+        );
+
+    }
+
+    @ResponseBody
+    @ExceptionHandler(MathException.class)
+    public ResponseEntity<?> mathExceptionHandler(MathException exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage()
+                ));
+    }
+
+    @ResponseBody
+    @ExceptionHandler(AccessDenied.class)
+    public ResponseEntity<?> accessDeniedExceptionHandler(HttpServletRequest request,AccessDenied exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage(),
+                        "access_error","while try to access url[%s]".formatted(request.getRequestURI())
+
+                ));
+    }
+}
+
+
+

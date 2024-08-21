@@ -1,0 +1,94 @@
+package com.sdle.pro1.eosb.model;
+
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.validator.constraints.Range;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Student{
+      @Positive
+      private int id;
+      @NotBlank(message = "name can't be blank bro!")
+      private String name;
+      @Range(min = 23,max = 30)
+      private int age;
+      @Positive
+      private float cgpa;
+      @Email(message = "Email is not formatted bro!")
+      private String email;
+
+      private String phone;
+      @Valid
+      private Address address;
+}
+
+
+
+package com.sdle.pro1.eosb.model;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Address {
+    @Positive
+    private int roadNo;
+    @Positive
+    private int hosueNo;
+    @NotBlank
+    private String houseName;
+}
+
+
+package com.sdle.pro1.eosb;
+
+import com.sdle.pro1.eosb.model.Address;
+import com.sdle.pro1.eosb.model.Student;
+import jakarta.validation.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.EnableAsync;
+
+import java.util.Set;
+
+@EnableAsync
+@SpringBootApplication
+public class EngineeringOnSpringbootApplication{
+
+	public static void main(String[] args) throws Exception {
+		//ApplicationContext context= SpringApplication.run(EngineeringOnSpringbootApplication.class,args);
+		//ConfigurableApplicationContext context=new AnnotationConfigApplicationContext(EngineeringOnSpringbootApplication.class);
+		System.out.println("Md Mosabbir Hossain");
+		var a=new Address(-10,-34," ");
+		var s=new Student(-101," ",223,3.45f,"rkaib#email.com","o1345678934",a);
+		try(var factory = Validation.buildDefaultValidatorFactory()) {
+			Validator validator=factory.getValidator();
+			Set<ConstraintViolation<Student>> errors = validator.validate(s);
+			System.out.println(errors.size());
+
+			for(ConstraintViolation<Student> error : errors){
+				System.out.println(error.getPropertyPath()+" -> "+error.getMessage()+" => value: "+error.getInvalidValue());
+			}
+		}
+
+	}
+}
+

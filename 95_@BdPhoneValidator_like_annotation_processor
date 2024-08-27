@@ -1,0 +1,44 @@
+package com.sdle.pro1.eosb.annotation;
+
+import com.sdle.pro1.eosb.validator.BdPhoneNumberValidator;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import jakarta.validation.constraints.Pattern;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = BdPhoneNumberValidator.class)
+public @interface BdPhoneNumber {
+    String message() default "found Invalied Bangladeshi Phone Number";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+
+}
+
+
+
+package com.sdle.pro1.eosb.validator;
+import com.sdle.pro1.eosb.annotation.BdPhoneNumber;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class BdPhoneNumberValidator implements ConstraintValidator<BdPhoneNumber,String> {   // processor akhane likhchi
+    @Override
+    public void initialize(BdPhoneNumber constraintAnnotation) {
+
+    }
+    @Override
+    public boolean isValid(String phone, ConstraintValidatorContext constraintValidatorContext) {
+        log.info("Validating the Bangladeshi Phone number: {}",phone);
+        return phone.matches("(\\+88)?01[3-9]\\d{8}");
+    }
+}

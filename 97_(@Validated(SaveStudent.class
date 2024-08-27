@@ -1,0 +1,158 @@
+package com.sdle.pro1.eosb.model;
+
+import com.sdle.pro1.eosb.annotation.BdPhoneNumber;
+import com.sdle.pro1.eosb.interfaces.SaveStudent;
+import com.sdle.pro1.eosb.interfaces.UpdateStudent;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import jakarta.validation.groups.Default;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.validator.constraints.Range;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Student{
+      @Positive
+      private int id;
+
+      @NotBlank(message = "name can't be blank bro!",groups = {SaveStudent.class, UpdateStudent.class})
+      private String name;
+
+      @Range(min = 3,max = 30,groups = SaveStudent.class)
+      private int age;
+
+      @Positive(groups = SaveStudent.class)
+      private float cgpa;
+
+      @Email(message = "Email is not formatted bro!",groups = UpdateStudent.class)
+      private String email;
+
+     // @Pattern(regexp = "(\\+88)?01[3-9]\\d{8}",message = "found Invalied Bangladeshi Phone Number")
+      @BdPhoneNumber(message = "Invalide Bd Phone number",groups = UpdateStudent.class)
+      private String phone;
+
+      @Valid
+      @NotNull
+      private Address address;
+}
+
+
+package com.sdle.pro1.eosb.contorller.rest;
+import com.sdle.pro1.eosb.annotation.MvcControllerIdentifier;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import com.sdle.pro1.eosb.interfaces.RestControllerIdentifier;
+import com.sdle.pro1.eosb.interfaces.SaveStudent;
+import com.sdle.pro1.eosb.model.ResponseError;
+import com.sdle.pro1.eosb.model.Student;
+import jakarta.validation.Valid;
+
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/v1")
+public class StudentController{
+
+    @PostMapping("/save-student")
+    public Student saveStudent(@Validated(SaveStudent.class) @RequestBody Student student){
+        //db operation
+        return student;
+    }
+}
+
+
+
+
+package com.sdle.pro1.eosb.exhandler;
+
+import com.sdle.pro1.eosb.exception.AccessDenied;
+import com.sdle.pro1.eosb.exception.MathException;
+import com.sdle.pro1.eosb.exception.PageNotFoundException;
+import com.sdle.pro1.eosb.exception.ResourseNotFoundException;
+import com.sdle.pro1.eosb.interfaces.RestControllerIdentifier;
+import com.sdle.pro1.eosb.model.ResponseError;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Validation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class GlobalRestExceptionHandler {
+    @Autowired
+    private ErrorAttributes errorAttributes;
+
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleInvalidArgMethod(MethodArgumentNotValidException exception){
+       List<FieldError>fieldErrors=exception.getFieldErrors();
+       Map<String,Object>errors= fieldErrors.stream().collect(Collectors.toMap(e->e.getField(),e->e.getDefaultMessage()));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "errror",HttpStatus.BAD_REQUEST,
+                        "meessate","found error fields for student obj",
+                        "errors",errors
+                ));
+    }
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourseNotFoundException.class)
+    public ResponseError resouceNotFound(ResourseNotFoundException exception){
+       return new ResponseError(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.toString(),
+                exception.getMessage()
+
+        );
+    }
+
+    @ResponseBody
+    @ExceptionHandler(MathException.class)
+    public ResponseEntity<?> mathExceptionHandler(MathException exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage()
+                ));
+    }
+
+    @ResponseBody
+    @ExceptionHandler(AccessDenied.class)
+    public ResponseEntity<?> accessDeniedExceptionHandler(HttpServletRequest request,AccessDenied exception){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status",HttpStatus.INTERNAL_SERVER_ERROR,
+                        "error", AccessDenied.class.getSimpleName(),
+                        "message",exception.getMessage(),
+                        "access_error","while try to access url[%s]".formatted(request.getRequestURI())
+
+                ));
+    }
+}

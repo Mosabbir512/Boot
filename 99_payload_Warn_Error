@@ -1,0 +1,81 @@
+package com.sdle.pro1.eosb.model;
+
+import com.sdle.pro1.eosb.annotation.BdPhoneNumber;
+import com.sdle.pro1.eosb.interfaces.Error;
+import com.sdle.pro1.eosb.interfaces.SaveStudent;
+import com.sdle.pro1.eosb.interfaces.UpdateStudent;
+import com.sdle.pro1.eosb.interfaces.Warn;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import jakarta.validation.groups.Default;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.validator.constraints.Range;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Student{
+      @Positive
+      private int id;
+
+      @NotBlank(message = "name can't be blank bro!",groups = {SaveStudent.class, UpdateStudent.class})
+      private String name;
+
+      @Range(min = 3,max = 30,groups = SaveStudent.class)
+      private int age;
+
+      @Positive(groups = SaveStudent.class)
+      private float cgpa;
+
+      @Email(message = "Email is not formatted bro!",groups = UpdateStudent.class)
+      private String email;
+
+     // @Pattern(regexp = "(\\+88)?01[3-9]\\d{8}",message = "found Invalied Bangladeshi Phone Number")
+      @BdPhoneNumber(message = "Invalide Bd Phone number",groups = UpdateStudent.class,payload = Warn.class)
+      private String phone;
+
+      @Valid
+      @NotNull
+      private Address address;
+}
+
+
+
+
+package com.sdle.pro1.eosb.validator;
+
+import com.sdle.pro1.eosb.annotation.BdPhoneNumber;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.Payload;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class BdPhoneNumberValidator implements ConstraintValidator<BdPhoneNumber,String> { 
+    private Class<? extends Payload> [] payloads;
+
+    @Override
+    public void initialize(BdPhoneNumber constraintAnnotation) {
+            this.payloads=constraintAnnotation.payload();
+
+    }
+    @Override
+    public boolean isValid(String phone, ConstraintValidatorContext constraintValidatorContext) {
+        boolean flag=phone.matches("(\\+88)?01[3-9]\\d{8}");
+        // log.info("Validating the Bangladeshi Phone number: {}",phone);
+        if(payloads !=null & payloads.length!=0 & !flag){
+            Class<?> p=payloads[0];
+            System.out.println(p);
+            if("Error".equals(p.getSimpleName())){
+               log.error("Validating the Bangladeshi Phone number: {}",phone);
+            }else if("Warn".equals(p.getSimpleName())){
+                log.warn("Validating the Bangladeshi Phone number: {}",phone);
+            }
+        }
+        return flag;
+    }
+}

@@ -1,0 +1,61 @@
+@RestController
+@RequestMapping("/api/v1")
+public class StudentController{
+
+    @PostMapping("/save-student")
+    public Student saveStudent(@Validated({SaveStudent.class, Default.class}) @RequestBody Student student){
+        //db operation
+        return student;
+    }
+
+    @PostMapping("/update-student")
+    public Student updateStudent(@Validated({UpdateStudent.class, Default.class}) @RequestBody Student student){
+        //db operation
+        return student;
+    }
+}
+
+
+
+package com.sdle.pro1.eosb.model;
+
+import com.sdle.pro1.eosb.annotation.BdPhoneNumber;
+import com.sdle.pro1.eosb.interfaces.SaveStudent;
+import com.sdle.pro1.eosb.interfaces.UpdateStudent;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import jakarta.validation.groups.Default;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.validator.constraints.Range;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Student{
+      @Positive
+      private int id;
+
+      @NotBlank(message = "name can't be blank bro!",groups = {SaveStudent.class, UpdateStudent.class})
+      private String name;
+
+      @Range(min = 3,max = 30,groups = SaveStudent.class)
+      private int age;
+
+      @Positive(groups = SaveStudent.class)
+      private float cgpa;
+
+      @Email(message = "Email is not formatted bro!",groups = UpdateStudent.class)
+      private String email;
+
+     // @Pattern(regexp = "(\\+88)?01[3-9]\\d{8}",message = "found Invalied Bangladeshi Phone Number")
+      @BdPhoneNumber(message = "Invalide Bd Phone number",groups = UpdateStudent.class)
+      private String phone;
+
+      @Valid
+      @NotNull
+      private Address address;
+}

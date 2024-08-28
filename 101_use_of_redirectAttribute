@@ -1,0 +1,111 @@
+package com.sdle.pro1.eosb.contorller.mvc;
+import com.sdle.pro1.eosb.model.Student;
+import jakarta.validation.Valid;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller
+public class StudentMvcController {
+      @GetMapping("/student-form")
+      public String stu_form(Model model){
+          if(!model.containsAttribute("student")) {
+              model.addAttribute("student", new Student());
+          }
+           return "stu_form";
+       }
+
+       @PostMapping("/save-student")
+       public String saveStudent(@Validated @ModelAttribute("student") Student student,
+                                 BindingResult result,
+                                 Model model, RedirectAttributes redirectAttributes){
+          if(result.hasErrors()){
+              redirectAttributes.addFlashAttribute("student",student);
+              redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.student",result);
+              return "redirect:/student-form";
+          }
+          model.addAttribute("student",student);
+          return "student";
+       }
+
+}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stu Form</title>
+</head>
+<body>
+<form action="/save-student" method="post" th:object="${student}">
+    <table>
+        <tr>
+            <td>ID</td>
+            <td><input name="id" type="number"></td>
+            <td th:if="${#fields.hasErrors('id')}" th:errors="*{id}" style="color: red"></td>
+<!--            <td th:if="${#fields.hasErrors('id')}" th:errors="*{id}"></td>-->
+        </tr>
+        <tr>
+            <td>Name</td>
+            <td><input name="Name" type="text"></td>
+            <td th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color: red"</td>
+        </tr>
+        <tr>
+            <td>AGE</td>
+            <td><input name="age" type="number"></td>
+            <td th:if="${#fields.hasErrors('age')}" th:errors="*{age}" style="color: red"></td>
+        </tr>
+        <tr>
+            <td>CGPA</td>
+            <td><input name="cgpa" type="text"></td>
+            <td th:if="${#fields.hasErrors('cgpa')}" th:errors="*{cgpa}" style="color: red"></td>
+        </tr>
+
+        <tr>
+            <td>Email</td>
+            <td><input name="email" type="text"></td>
+            <td th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color: red"></td>
+        </tr>
+        <tr>
+            <td>Phone</td>
+            <td><input name="phone" type="text"></td>
+            <td th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red"></td>
+        </tr>
+        <tr>
+            <td><input value="save" type="submit"></td>
+        </tr>
+
+    </table>
+</form>
+</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student</title>
+</head>
+<body>
+<h1>student id: [[${student.id}]]</h1>
+<h1>student name: [[${student.name}]]</h1>
+<h1>student age: [[${student.age}]]</h1>
+<h1>student cgpa: [[${student.cgpa}]]</h1>
+<h1>student Email: [[${student.email}]]</h1>
+<h1>student Phone: [[${student.phone}]]</h1>
+<h1>student cgpa: [[${student.cgpa}]]</h1>
+
+</body>
+</html>

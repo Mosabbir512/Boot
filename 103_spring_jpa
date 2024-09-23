@@ -1,0 +1,67 @@
+package com.sdlc.pro.edj.entity;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "student_table")
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+public class StudentEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Float cgpa;
+}
+
+
+
+package com.sdlc.pro.edj.dao;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface  StudentDao extends JpaRepository<StudentEntity,Integer>{
+ //  @Query("select s from StudentEntity s where s.id=?1")
+  //  List<StudentEntity>getAll;
+
+}
+
+
+
+
+package com.sdlc.pro.edj;
+import com.sdlc.pro.edj.dao.StudentDao;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Persistence;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import javax.sql.DataSource;
+
+@SpringBootApplication
+public class EsobDataJpaApplication implements CommandLineRunner{
+	public static void main(String[] args) {
+		SpringApplication.run(EsobDataJpaApplication.class,args);
+	}
+
+	@Autowired
+	private StudentDao studentDao;
+
+	@Override
+	public void run(String... args) throws Exception {
+           studentDao.save(new StudentEntity(1,"Mosa",3.90f));
+	}
+
+}

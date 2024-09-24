@@ -1,0 +1,36 @@
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+
+//@SpringBootApplication
+public class EsobDataJpaApplication {
+	public static void main(String[] args) throws Exception{
+
+		EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+		EntityManager em=emf.createEntityManager();
+
+
+			em.getTransaction().begin();
+
+			System.out.println(em);
+			StudentEntity s = new StudentEntity();
+			//s.setId(3);
+			s.setCgpa(3.44f);
+			s.setName("shohan");
+
+			em.persist(s);
+
+
+			em.getTransaction().commit();
+
+
+
+//		StudentEntity s=new StudentEntity(101,"Sorab",3.44f);
+//		em.persist(s);
+
+
+	}
+}

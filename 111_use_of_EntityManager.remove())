@@ -1,5 +1,43 @@
-package com.sdlc.pro.edj;
 
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+@Entity
+@Table(name = "student_table")
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+public class StudentEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Float cgpa;
+}
+
+
+
+package com.sdlc.pro.edj.dao;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+@Repository
+public interface  StudentDao extends JpaRepository<StudentEntity,Integer>{
+    @Query("select s from StudentEntity s where s.id=?1")
+    List<StudentEntity> getAll();
+
+}
+
+
+
+
+package com.sdlc.pro.edj;
 import com.sdlc.pro.edj.entity.StudentEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;

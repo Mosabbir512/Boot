@@ -1,0 +1,46 @@
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+import org.hibernate.jpa.QueryHints;
+
+
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+    transational((em)->{
+
+        var g=em.createEntityGraph(StudentEntity.class);
+        g.addAttributeNodes("courses");
+		var s=em.createQuery("select s from StudentEntity s", StudentEntity.class)
+                .setHint(QueryHints.JAKARTA_HINT_FETCHGRAPH,g)
+				.getResultList();
+
+		System.out.println(s);
+		for(var stu:s){   //  N
+			System.out.println(stu.getCourses());
+		}
+
+
+
+	});
+	}
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+
+
+}

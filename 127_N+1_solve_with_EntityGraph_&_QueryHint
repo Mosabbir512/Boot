@@ -1,3 +1,39 @@
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
+
+@Entity
+@Table(name = "student")
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(exclude = "courses")
+@NamedEntityGraphs({
+        @NamedEntityGraph(name = "studentWithCourse",attributeNodes = @NamedAttributeNode("courses"))
+})
+public class StudentEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Float cgpa;
+
+    @OneToMany
+    @JoinColumn(name = "student_id",referencedColumnName = "id") //course table e ai name e column add hobe
+    private List<Course> courses;
+}
+
+
+
+
+
+
+
+
 package com.sdlc.pro.edj;
 
 import com.sdlc.pro.edj.entity.StudentEntity;

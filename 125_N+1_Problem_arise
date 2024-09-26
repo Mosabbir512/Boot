@@ -1,0 +1,90 @@
+
+package com.sdlc.pro.edj.entity;
+import jakarta.persistence.*;
+import lombok.*;
+import java.util.List;
+
+@Entity
+@Table(name = "student")
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(exclude = "courses")
+public class StudentEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Float cgpa;
+
+    @OneToMany
+    @JoinColumn(name = "student_id",referencedColumnName = "id") //course table e ai name e column add hobe
+    private List<Course> courses;
+}
+
+
+
+
+package com.sdlc.pro.edj.entity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+@Entity
+@Table(name = "course")
+@Setter
+@Getter
+@ToString
+public class Course {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private String code;
+}
+
+
+
+
+
+
+
+
+
+package com.sdlc.pro.edj;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+    transational((em)->{
+
+		var s=em.createQuery("select s from StudentEntity s", StudentEntity.class)   // 1-> N
+				.getResultList(); 
+
+		System.out.println(s);
+		for(var stu:s){   //  N
+			System.out.println(stu.getCourses());
+		}
+  
+	});
+	}
+ 
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+}

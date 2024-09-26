@@ -1,0 +1,37 @@
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+    transational((em)->{
+		TypedQuery<StudentEntity> q=em.createQuery("select s from StudentEntity s where s.id=:stu_id", StudentEntity.class);
+		q.setParameter("stu_id",12);
+		StudentEntity s= q.getSingleResult();
+		System.out.println(s);
+
+	});
+	}
+
+ 
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+
+
+}

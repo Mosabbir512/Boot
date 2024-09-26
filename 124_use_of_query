@@ -1,0 +1,29 @@
+transational((em)->{
+		TypedQuery<StudentEntity> q=em.createQuery("select s from StudentEntity s", StudentEntity.class);
+
+		q.setFirstResult(3);
+		q.setMaxResults(2);
+		q.getResultList()
+				.forEach(System.out::println);
+
+	});
+	}
+
+
+
+
+
+// in console
+
+select s.id,s.cgpa from student_table s
+
+select
+    se1_0.id,
+    se1_0.cgpa,
+    se1_0.name
+from
+    student_table se1_0 order by id asc
+offset
+    ? rows
+    fetch
+    first ? rows only

@@ -1,0 +1,50 @@
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import org.hibernate.jpa.QueryHints;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+    transational((em)->{
+
+        CriteriaBuilder cb=em.getCriteriaBuilder();
+        CriteriaQuery<String>cq=cb.createQuery(String.class);
+        Root<StudentEntity>root=cq.from(StudentEntity.class);
+
+		cq.multiselect(root.get("name"));
+		cq.where(cb.equal(root.get("id"),"2"));
+		
+        TypedQuery<String>q =em.createQuery(cq);
+        q.getResultStream().forEach(System.out::println);
+
+
+
+	});
+	}
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+
+
+}

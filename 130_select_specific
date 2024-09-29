@@ -1,0 +1,16 @@
+public static void main(String[] args) throws Exception{
+    transational((em)->{
+
+        CriteriaBuilder cb=em.getCriteriaBuilder();
+        CriteriaQuery<StudentEntity>cq=cb.createQuery(StudentEntity.class);
+        Root<StudentEntity>root=cq.from(StudentEntity.class);
+
+		cq.where(cb.equal(root.get("name"),"Rakib"));
+		
+        TypedQuery<StudentEntity>q =em.createQuery(cq);
+        q.getResultStream().forEach(System.out::println);
+
+
+
+	});
+	}

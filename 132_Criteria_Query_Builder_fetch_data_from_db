@@ -1,0 +1,163 @@
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.*;
+
+@Entity
+@Setter
+@Getter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private String description;
+    private double price;
+    private String category;
+    private String brand;
+}
+/*  Product table/Entity
+1,HP laptop,HP,LAPTOP,this is simple hp laptop,55000
+2,Dell laptop,DELL,LAPTOP,this is simple dell laptop,70000
+3,POCO C23,POCO,PHONE,this is simple poco phone,18000
+*/
+
+
+
+
+package com.sdlc.pro.edj.dto;
+
+import java.util.List;
+
+public record ProductSearchDto(
+        String search,
+        String category,
+        double minPrize,
+        double maxPrize,
+        List<String> brands
+) {
+}
+
+
+
+
+
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.dto.ProductSearchDto;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import org.hibernate.jpa.QueryHints;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+
+    var filter=new ProductSearchDto(
+			"  simple ",
+			"PHONE",
+			5000,75000,
+			List.of("POCO","HP","DELL")
+			);
+
+    transational((em)->{
+
+        CriteriaBuilder cb=em.getCriteriaBuilder();
+        CriteriaQuery<Product>cq=cb.createQuery(Product.class);
+        Root<Product>root=cq.from(Product.class);
+
+        var list=new ArrayList<Predicate>();
+
+		if(filter.search()!=null && !filter.search().isBlank()){
+			var sv=filter.search().trim();
+			var np=cb.like(root.get("name"),"%" + sv + "%");
+			var dp=cb.like(root.get("description"),"%"+ sv +"%");
+			list.add(cb.or(np,dp));
+		}
+
+		if(filter.category()!=null){
+			list.add(cb.equal(root.get("category"),filter.category()));
+		}
+
+		if(filter.minPrize() <= filter.maxPrize()){
+             var minp=cb.greaterThanOrEqualTo(root.get("price"),filter.minPrize());
+			 var maxp=cb.lessThanOrEqualTo(root.get("price"),filter.maxPrize());
+			 list.add(cb.and(minp,maxp));
+		}
+		if(filter.brands()!=null && !filter.brands().isEmpty()){
+			var bp=root.get("brand").in(filter.brands());
+			list.add(bp);
+		}
+
+		cq.where(list.toArray(new Predicate[0]));
+        var q=em.createQuery(cq);
+        q.getResultStream().forEach(System.out::println);
+
+	});
+	}
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+
+
+}
+
+
+
+
+/*
+output:
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.brand,
+        p1_0.category,
+        p1_0.description,
+        p1_0.name,
+        p1_0.price 
+    from
+        Product p1_0 
+    where
+        (
+            p1_0.name like ? escape '' 
+            or p1_0.description like ? escape ''
+        ) 
+        and p1_0.category=? 
+        and p1_0.price>=? 
+        and p1_0.price<=? 
+        and p1_0.brand in (?, ?, ?)
+Product(id=3, name=POCO C23, description=this is simple poco phone, price=18000.0, category=PHONE, brand=POCO)
+
+*/
+
+
+

@@ -1,0 +1,49 @@
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+public class AddressEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+     private Integer aid;
+     private String name;
+     private Integer road;
+
+     @OneToOne(mappedBy = "address")  // er dara ownership delegate korlam StudentEntity er kase // address feild er maddome    
+     private StudentEntity student;
+    public AddressEntity(String name, Integer road) {
+        this.name = name;
+        this.road = road;
+    }
+}
+
+
+package com.sdlc.pro.edj.entity;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+
+public class StudentEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Float cgpa;
+
+    @OneToOne(targetEntity = AddressEntity.class)
+    @JoinColumn(foreignKey = @ForeignKey(name = "FK_Stu_Adr"))
+    private AddressEntity address;    // er maddhome owner ship pay StudentEntity 
+
+}

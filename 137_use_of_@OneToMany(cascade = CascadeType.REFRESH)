@@ -1,0 +1,189 @@
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@Entity
+@Getter
+@ToString
+@NoArgsConstructor
+public class CartItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer iid;
+    private String name;
+
+    public CartItem(String name) {
+        this.name = name;
+    }
+}
+
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.List;
+
+@Entity
+@NoArgsConstructor
+@Getter
+@ToString
+public class Cart {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer cid;
+    private String userName;
+
+    public Cart(String userName, List<CartItem> cartItems) {
+        this.userName = userName;
+        this.cartItems = cartItems;
+    }
+
+    @OneToMany(cascade = CascadeType.REFRESH)
+    private List<CartItem>cartItems;
+}
+
+
+
+
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.dto.ProductSearchDto;
+import com.sdlc.pro.edj.entity.Cart;
+import com.sdlc.pro.edj.entity.CartItem;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import org.hibernate.jpa.QueryHints;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+
+import java.util.List;
+import java.util.function.Consumer;
+
+public class EsobDataJpaApplication {
+
+	final  static EntityManagerFactory emf=Persistence.createEntityManagerFactory("postgres_unit");
+	static final EntityManager em=emf.createEntityManager();
+
+	public static void main(String[] args) throws Exception{
+
+    transational((em)->{
+/*
+		var i1=new CartItem("HP Laptop");
+		var i2=new CartItem("iPhone 16");
+		var i3=new CartItem("SAMSUNG Monitor");
+
+		var cart=new Cart("RAkib", List.of(i1,i2,i3));
+		em.persist(cart);
+
+ */
+		var cart=em.find(Cart.class,1);
+		System.out.println(cart);
+
+		sleep(15000);
+
+		em.refresh(cart);
+		System.out.println(cart);
+
+
+	});
+	}
+
+	static void transational(Consumer<EntityManager> consumer){
+		em.getTransaction().begin();//before advice
+		try {
+			consumer.accept(em);
+		}
+		catch (Exception ex){
+          em.getTransaction().rollback();
+		  throw new RuntimeException("can't save object");
+		}
+		em.getTransaction().commit();//after advice
+		em.close();
+	}
+	 static void sleep(long ms){
+		try {
+			Thread.sleep(ms);
+		}
+		catch (Exception ex){
+			ex.printStackTrace();
+		}
+	}
+}
+
+
+
+/*
+output:
+Hibernate: 
+    select
+        c1_0.cid,
+        c1_0.userName 
+    from
+        Cart c1_0 
+    where
+        c1_0.cid=?
+Hibernate: 
+    select
+        ci1_0.Cart_cid,
+        ci1_1.iid,
+        ci1_1.name 
+    from
+        Cart_CartItem ci1_0 
+    join
+        CartItem ci1_1 
+            on ci1_1.iid=ci1_0.cartItems_iid 
+    where
+        ci1_0.Cart_cid=?
+Cart(cid=1, userName=  babab, cartItems=[CartItem(iid=3, name=SAMSUNG Monitor), CartItem(iid=1, name=laptop)])
+Hibernate: 
+    select
+        ci1_0.iid,
+        ci1_0.name 
+    from
+        CartItem ci1_0 
+    where
+        ci1_0.iid=?
+Hibernate: 
+    select
+        ci1_0.iid,
+        ci1_0.name 
+    from
+        CartItem ci1_0 
+    where
+        ci1_0.iid=?
+Hibernate: 
+    select
+        c1_0.cid,
+        c1_0.userName,
+        ci1_0.Cart_cid,
+        ci1_1.iid,
+        ci1_1.name 
+    from
+        Cart c1_0 
+    left join
+        Cart_CartItem ci1_0 
+            on c1_0.cid=ci1_0.Cart_cid 
+    left join
+        CartItem ci1_1 
+            on ci1_1.iid=ci1_0.cartItems_iid 
+    where
+        c1_0.cid=?
+Cart(cid=1, userName=  babab, cartItems=[CartItem(iid=3, name=SAMSUNG Monitor), CartItem(iid=1, name=HP laptop)])
+
+*/

@@ -1,3 +1,62 @@
+Hibernate: 
+    insert 
+    into
+        Cart
+        (userName) 
+    values
+        (?) 
+    returning cid
+Hibernate: 
+    insert 
+    into
+        CartItem
+        (name) 
+    values
+        (?) 
+    returning iid
+Hibernate: 
+    insert 
+    into
+        CartItem
+        (name) 
+    values
+        (?) 
+    returning iid
+Hibernate: 
+    insert 
+    into
+        CartItem
+        (name) 
+    values
+        (?) 
+    returning iid
+Hibernate: 
+    insert 
+    into
+        Cart_CartItem
+        (Cart_cid, cartItems_iid) 
+    values
+        (?, ?)
+Hibernate: 
+    insert 
+    into
+        Cart_CartItem
+        (Cart_cid, cartItems_iid) 
+    values
+        (?, ?)
+Hibernate: 
+    insert 
+    into
+        Cart_CartItem
+        (Cart_cid, cartItems_iid) 
+    values
+        (?, ?)
+
+Process finished with exit code 0
+
+
+
+
 select
         c1_0.cid,
         c1_0.userName 

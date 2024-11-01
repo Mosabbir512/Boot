@@ -1,0 +1,72 @@
+transational((em)->{
+/*
+		var i1=new CartItem("HP Laptop");
+		var i2=new CartItem("iPhone 16");
+		var i3=new CartItem("SAMSUNG Monitor");
+
+		var cart=new Cart("RAkib", List.of(i1,i2,i3));
+		em.persist(cart);
+
+ */
+		var cart=em.find(Cart.class,1);
+		System.out.println(cart);
+
+		sleep(10000);
+
+		em.refresh(cart);
+		System.out.println(cart);
+
+
+	});
+	}
+
+
+ /*
+output:
+Hibernate: 
+    select
+        c1_0.cid,
+        c1_0.userName 
+    from
+        Cart c1_0 
+    where
+        c1_0.cid=?
+Hibernate: 
+    select
+        ci1_0.Cart_cid,
+        ci1_1.iid,
+        ci1_1.name 
+    from
+        Cart_CartItem ci1_0 
+    join
+        CartItem ci1_1 
+            on ci1_1.iid=ci1_0.cartItems_iid 
+    where
+        ci1_0.Cart_cid=?
+Cart(cid=1, userName=  babab, cartItems=[CartItem(iid=1, name=HP Laptop), CartItem(iid=3, name=SAMSUNG Monitor)])
+Hibernate: 
+    select
+        c1_0.cid,
+        c1_0.userName 
+    from
+        Cart c1_0 
+    where
+        c1_0.cid=?
+Hibernate: 
+    select
+        ci1_0.Cart_cid,
+        ci1_1.iid,
+        ci1_1.name 
+    from
+        Cart_CartItem ci1_0 
+    join
+        CartItem ci1_1 
+            on ci1_1.iid=ci1_0.cartItems_iid 
+    where
+        ci1_0.Cart_cid=?
+Cart(cid=1, userName=  babab, cartItems=[CartItem(iid=1, name=HP Laptop), CartItem(iid=3, name=SAMSUNG Monitor)])
+
+Process finished with exit code 0
+
+
+ */

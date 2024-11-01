@@ -1,0 +1,20 @@
+select
+        c1_0.cid,
+        c1_0.userName 
+    from
+        Cart c1_0 
+    where
+        c1_0.cid=?
+
+
+select
+        ci1_0.Cart_cid,
+        ci1_1.iid,
+        ci1_1.name 
+    from
+        Cart_CartItem ci1_0 
+    join
+        CartItem ci1_1 
+            on ci1_1.iid=ci1_0.cartItems_iid 
+    where
+        ci1_0.Cart_cid=?

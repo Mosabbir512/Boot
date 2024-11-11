@@ -1,0 +1,89 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import org.hibernate.id.IncrementGenerator;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.Optional;
+
+public interface PgSqlStudentRepositoryCustom {
+    StudentEntity getStudentBy(Integer id,String name);
+
+}
+
+
+
+package com.sdlc.pro.edj.repository.Impl;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class PgSqlStudentRepositoryCustomImpl implements PgSqlStudentRepositoryCustom {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public StudentEntity getStudentBy(Integer id, String name) {
+        StringBuilder sql=new StringBuilder("select s from StudentEntity s where ");
+        if(id!=null && name!=null){
+            sql.append("id = ")
+                    .append(id)
+                    .append(" and name= '")
+                    .append(name)
+                    .append("'");
+        }
+        else if(name==null){
+            sql.append("id = ")
+                    .append(id);
+        }
+        else {
+            sql.append("name= '")
+                    .append(name)
+                    .append("'");
+        }
+        return entityManager.createQuery(sql.toString(),StudentEntity.class).getSingleResult();
+
+    }
+}
+
+
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+	@Autowired
+	private PgSqlStudentRepositoryCustom pgsqlStudentRepository;
+
+	@Override
+	public void run(String... args) throws Exception {
+		var s=pgsqlStudentRepository.getStudentBy(3,"rtrakib");
+		System.out.println(s);
+	//	var list=pgsqlStudentRepository.findAll();
+	//	list.forEach(System.out::println);
+
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+

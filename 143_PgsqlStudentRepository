@@ -1,0 +1,173 @@
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Logger;
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
+
+import javax.swing.text.html.parser.Entity;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
+@Repository
+public interface PgsqlStudentRepository extends JpaRepository<StudentEntity,Integer> ,PgSqlStudentRepositoryCustom{
+
+    @Query("select s from StudentEntity s where s.id=?1")
+    Optional<StudentEntity> findById(Integer id);
+
+    Optional<StudentEntity>findStudentEntitiesByIdAndName(Integer id,String name);
+
+
+}
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+    @Qualifier("pgSqlStudentRepositoryCustomImpl")
+    @Autowired
+  	private PgSqlStudentRepositoryCustom pgSqlStudentRepositoryCustom;
+    @Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Override
+	public void run(String... args) throws Exception {
+		var student=new StudentEntity("Mosabbir_Sakib",4.00f);
+		pgsqlStudentRepository.save(student);
+
+	
+
+        var s1=pgsqlStudentRepository.findById(4);
+        System.out.println(s1);
+
+		var sss=pgsqlStudentRepository.findStudentEntitiesByIdAndName(4,"Mosabbir");
+		System.out.println(sss);
+
+	//	var list=pgsqlStudentRepository.findAll();
+	//	list.forEach(System.out::println);
+
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+
+
+
+/*
+Hibernate: 
+    insert 
+    into
+        StudentEntity
+        (cgpa, name) 
+    values
+        (?, ?) 
+    returning id
+
+2024-11-20T06:18:59.692+06:00 TRACE 10364 --- [           main] toryAnnotationTransactionAttributeSource : Adding transactional method 'org.springframework.data.jpa.repository.support.SimpleJpaRepository.findById' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT,readOnly
+Hibernate: 
+    select
+        se1_0.id,
+        se1_0.cgpa,
+        se1_0.name 
+    from
+        StudentEntity se1_0 
+    where
+        se1_0.id=?
+Optional[StudentEntity(id=2, name=rakib, cgpa=4.55)]
+Hibernate: 
+    select
+        se1_0.id,
+        se1_0.cgpa,
+        se1_0.name 
+    from
+        StudentEntity se1_0 
+    where
+        se1_0.id=? 
+        and se1_0.name=?
+Optional[StudentEntity(id=4, name=Mosabbir, cgpa=3.44)]
+*/
+
+
+

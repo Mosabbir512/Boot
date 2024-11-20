@@ -1,0 +1,71 @@
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+    @Qualifier("pgSqlStudentRepositoryCustomImpl")
+    @Autowired
+	private PgSqlStudentRepositoryCustom pgSqlStudentRepositoryCustom;
+    @Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Override
+	public void run(String... args) throws Exception {
+		//var student=new StudentEntity("Mosabbir_Sakib",4.00f);
+		//pgsqlStudentRepository.save(student);
+
+		var s=pgSqlStudentRepositoryCustom.getStudentBy(null,"Mosabbir");
+		System.out.println(s);
+
+      //  var s1=pgsqlStudentRepository.findById(4);
+      //  System.out.println(s1);
+
+		//var sss=pgsqlStudentRepository.findStudentEntitiesByIdAndName(4,"Mosabbir");
+		//System.out.println(sss);
+
+		var list=pgsqlStudentRepository.findAll();
+		list.forEach(System.out::println);
+
+	}
+
+ }
+
+
+
+ /*
+Hibernate: 
+    select
+        se1_0.id,
+        se1_0.cgpa,
+        se1_0.name 
+    from
+        StudentEntity se1_0
+StudentEntity(id=1, name=rakib, cgpa=4.55)
+StudentEntity(id=2, name=rakib, cgpa=4.55)
+StudentEntity(id=3, name=rtrakib, cgpa=4.5)
+StudentEntity(id=4, name=Mosabbir, cgpa=3.44)
+StudentEntity(id=5, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=6, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=7, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=8, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=9, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=10, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=11, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=12, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=13, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=14, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=15, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=16, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=17, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=18, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=19, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=20, name=Mosabbir_Sakib, cgpa=4.0)
+ */

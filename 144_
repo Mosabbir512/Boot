@@ -1,0 +1,207 @@
+
+package com.sdlc.pro.edj.config;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.Properties;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+        basePackages = "com.sdlc.pro.edj.repository",
+        entityManagerFactoryRef = "pgsqlEntityManagerFactory",
+        transactionManagerRef = "pgsqlTransactionManager"
+)
+public class PgsqlDatabaseConfig{
+    @Bean
+    @ConfigurationProperties(prefix = "pgsql.datasource")
+    public DataSource pgsqlDataSource(){
+        return DataSourceBuilder
+                .create()
+                .build();
+    }
+    @Bean("pgsqlEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean pgsqlEntityManagerFactory(){
+        var factory=new LocalContainerEntityManagerFactoryBean();
+          factory.setPersistenceUnitName("pgsql-unit");
+          factory.setDataSource(pgsqlDataSource());
+
+          factory.setPackagesToScan("com.sdlc.pro.edj.entity");
+          var vendorAdapter=new HibernateJpaVendorAdapter();
+          vendorAdapter.setShowSql(true);
+          factory.setJpaVendorAdapter(vendorAdapter);
+          var props=new Properties();
+          props.setProperty("hibernate.hbm2ddl.auto","update");
+          props.setProperty("hibernate.format_sql","true");
+          factory.setJpaProperties(props);
+        return factory;
+    }
+
+    @Bean("pgsqlTransactionManager")
+    public PlatformTransactionManager pgsqlTransactionManager(EntityManagerFactory pgsqlEntityManagerFactory){
+        var manager=new JpaTransactionManager();
+        manager.setEntityManagerFactory(pgsqlEntityManagerFactory);
+        return manager;
+    }
+}
+
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.StudentEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.FluentQuery;
+import org.springframework.data.repository.query.Param;
+import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
+
+import javax.swing.text.html.parser.Entity;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
+@Repository
+public interface PgsqlStudentRepository extends JpaRepository<StudentEntity,Integer> ,PgSqlStudentRepositoryCustom{
+
+    @Query("select s from StudentEntity s where s.id=?1")
+    Optional<StudentEntity> findById(Integer id);
+
+    Optional<StudentEntity>findStudentEntitiesByIdAndName(Integer id,String name);
+
+   // @Query("select s from StudentEntity s where s.name like '%bir%'")
+    //List<StudentEntity>findByNameLike(String nameLike);
+    //select s from StudentEntity s where s.name like %:nameLike%
+    @Query("select s from StudentEntity s where s.name like %:namePart%")
+    List<StudentEntity> findByNameContaining(@Param("namePart") String namePart);
+
+
+
+
+}
+
+
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+    // @Qualifier("pgSqlStudentRepositoryCustomImpl")
+   // @Autowired
+	//private PgSqlStudentRepositoryCustom pgSqlStudentRepositoryCustom;
+    @Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Override
+	public void run(String... args) throws Exception {
+		//var student=new StudentEntity("Mosabbir_Sakib",4.00f);
+		//pgsqlStudentRepository.save(student);
+
+	//	var s=pgSqlStudentRepositoryCustom.getStudentBy(null,"Mosabbir");
+	//	System.out.println(s);
+
+      //  var s1=pgsqlStudentRepository.findById(4);
+      //  System.out.println(s1);
+
+		//var sss=pgsqlStudentRepository.findStudentEntitiesByIdAndName(4,"Mosabbir");
+		//System.out.println(sss);
+
+		var list=pgsqlStudentRepository.findAll();
+		list.forEach(System.out::println);
+
+		var s=pgsqlStudentRepository.findByNameContaining("Mosabbir");
+		s.forEach(System.out::println);
+
+	}
+}
+
+
+/*
+Hibernate: 
+    select
+        se1_0.id,
+        se1_0.cgpa,
+        se1_0.name 
+    from
+        StudentEntity se1_0
+StudentEntity(id=1, name=rakib, cgpa=4.55)
+StudentEntity(id=2, name=rakib, cgpa=4.55)
+StudentEntity(id=3, name=rtrakib, cgpa=4.5)
+StudentEntity(id=4, name=Mosabbir, cgpa=3.44)
+StudentEntity(id=5, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=6, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=7, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=8, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=9, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=10, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=11, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=12, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=13, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=14, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=15, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=16, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=17, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=18, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=19, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=20, name=Mosabbir_Sakib, cgpa=4.0)
+Hibernate: 
+    select
+        se1_0.id,
+        se1_0.cgpa,
+        se1_0.name 
+    from
+        StudentEntity se1_0 
+    where
+        se1_0.name like ? escape ''
+StudentEntity(id=4, name=Mosabbir, cgpa=3.44)
+StudentEntity(id=5, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=6, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=7, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=8, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=9, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=10, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=11, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=12, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=13, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=14, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=15, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=16, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=17, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=18, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=19, name=Mosabbir_Sakib, cgpa=4.0)
+StudentEntity(id=20, name=Mosabbir_Sakib, cgpa=4.0)
+*/

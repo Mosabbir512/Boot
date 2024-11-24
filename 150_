@@ -1,0 +1,545 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+     List<Product>findAllByCategoryName(String categoryName);
+     Streamable<Product> findAllByCategory_Name(String categoryName);
+
+     @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+     List<Product>findAllByIdBetween(int from,int to);
+    // Streamable<Product> findAllByNameLike(String name);
+}
+
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		var list=productRepository.findAllByIdBetween(1,100);   // 100 ta db theke tulle 
+		list.stream()
+				//.skip(10)
+				.limit(10)    // 10 ta print kore
+				.forEach(System.out::println);
+
+	/*	try(var stream=productRepository.findAllByNameLike("%Phone%") ){
+					stream.skip(1)
+					.limit(2)
+					.forEach(System.out::println);
+		}
+
+	 */
+
+		/*for (int i=0;i<100;i++){
+			var p=new Product();
+			p.setName(UUID.randomUUID().toString());
+			p.setPrice(Math.random()*10000);
+			p.setCategory(new Category(1));
+			p.setCategoryName("DJ");
+			productRepository.save(p);
+		}
+
+		 */
+	}
+
+
+}
+
+
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    where
+        p1_0.id between ? and ?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Product(id=2, name=SAMSUNG Phone Ultra s9, price=90000.0, categoryName=PHONE, version=1, category=Category(id=2, name=S_PHONE))
+Product(id=4, name=6b49c195-ffdf-4e80-b19d-11306dcbb41d, price=6040.2338562126415, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=5, name=99789cf1-b85f-40a8-8ce4-d2a37afba482, price=3156.047287170838, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=6, name=caaefdce-0e2a-40ad-8f51-41ba5871be30, price=4522.571725558182, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=7, name=d2fef567-adab-4734-a5e6-485a63ef400f, price=2212.342160444647, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=8, name=a570130f-0c15-4f73-8754-f46181a8154a, price=8220.17239763943, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=9, name=ae9c0a74-eb6a-4ee9-aad8-6d6f60809c34, price=7638.697764502526, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=10, name=089076c6-b68f-4696-983f-a7a6c791b29c, price=3939.1026575065525, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=11, name=9d28fcd1-3143-4ddf-9c7e-c78f3f2a6ee8, price=1902.0235335351242, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Product(id=12, name=c4a01e33-7604-4b64-a0c1-2602e20a713f, price=4281.156426878825, categoryName=DJ, version=1, category=Category(id=1, name=I_PHONE))
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+
+*/

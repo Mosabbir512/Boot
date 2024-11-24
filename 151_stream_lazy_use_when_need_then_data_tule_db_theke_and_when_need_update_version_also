@@ -1,0 +1,374 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+     List<Product>findAllByCategoryName(String categoryName);
+     Streamable<Product> findAllByCategory_Name(String categoryName);
+
+     @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+     Stream<Product>findAllByIdBetween(int from,int to);
+    // Streamable<Product> findAllByNameLike(String name);
+}
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		/*var list=productRepository.findAllByIdBetween(1,100);   // 100
+		list.stream()
+				//.skip(10)
+				.limit(10)   // version o update 100 ta kore
+				.forEach(System.out::println);
+
+		 */
+
+		try(var stream=productRepository.findAllByIdBetween(1,100) ){  // jokhon proyojon tokhon db theke tule
+					stream
+					.limit(10)    // version o updat 10 ta kore
+					.forEach(System.out::println);
+		}
+
+
+
+		/*for (int i=0;i<100;i++){
+			var p=new Product();
+			p.setName(UUID.randomUUID().toString());
+			p.setPrice(Math.random()*10000);
+			p.setCategory(new Category(1));
+			p.setCategoryName("DJ");
+			productRepository.save(p);
+		}
+
+		 */
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+
+
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    where
+        p1_0.id between ? and ?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Product(id=2, name=SAMSUNG Phone Ultra s9, price=90000.0, categoryName=PHONE, version=2, category=Category(id=2, name=S_PHONE))
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Product(id=4, name=6b49c195-ffdf-4e80-b19d-11306dcbb41d, price=6040.2338562126415, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=5, name=99789cf1-b85f-40a8-8ce4-d2a37afba482, price=3156.047287170838, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=27, name=398b41a7-6c63-485c-8310-482c124c40df, price=2722.6525387306733, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=28, name=3680cfd4-bc4e-4cc8-8b1d-30d9a8a0846a, price=6376.37705332378, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=29, name=69e082a4-c0d7-4082-8340-db1c4fdaf65d, price=7275.961440048628, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=30, name=15e4d80c-e874-4101-ae5a-7bb4f3c04199, price=5961.166633094767, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=31, name=bf8ceb9d-5264-4ddf-a01d-dd1abda471fd, price=9732.423228152025, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=32, name=fd6eee2e-152f-484e-baa9-56d1426f25cf, price=2920.1144540020628, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=33, name=bb51ee57-bb34-4696-8934-0eaf38bb6128, price=7015.385539888436, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+Hibernate: 
+    update
+        Product 
+    set
+        version=? 
+    where
+        id=? 
+        and version=?
+
+
+
+talbe:
+
+        1,PHONE,iPhone 14,120000,1,2
+2,PHONE,SAMSUNG Phone Ultra s9,90000,2,3
+3,LAPTOP,Dell Laptop,54000,3,2
+4,DJ,6b49c195-ffdf-4e80-b19d-11306dcbb41d,6040.2338562126415,1,3
+5,DJ,99789cf1-b85f-40a8-8ce4-d2a37afba482,3156.047287170838,1,3
+6,DJ,caaefdce-0e2a-40ad-8f51-41ba5871be30,4522.571725558182,1,2
+7,DJ,d2fef567-adab-4734-a5e6-485a63ef400f,2212.342160444647,1,2
+8,DJ,a570130f-0c15-4f73-8754-f46181a8154a,8220.17239763943,1,2
+9,DJ,ae9c0a74-eb6a-4ee9-aad8-6d6f60809c34,7638.697764502526,1,2
+10,DJ,089076c6-b68f-4696-983f-a7a6c791b29c,3939.1026575065525,1,2
+11,DJ,9d28fcd1-3143-4ddf-9c7e-c78f3f2a6ee8,1902.0235335351242,1,2
+12,DJ,c4a01e33-7604-4b64-a0c1-2602e20a713f,4281.156426878825,1,2
+13,DJ,a88c16c7-d705-4c28-8df2-b94db4fca3d6,6817.378865200459,1,2
+14,DJ,5bd488fe-4b49-4004-8c04-3d2b8c0079e0,6126.875144483397,1,2
+15,DJ,2dc5e4fa-b4f1-47f5-adce-3d097d155ec0,4604.277036009481,1,2
+16,DJ,a190d0e4-6c30-4969-b848-f5c598786ea7,5586.627955613861,1,2
+17,DJ,189f5883-dc08-4c4f-bc16-2e62c17380a2,2260.829700571286,1,2
+18,DJ,9329b902-c886-40a7-b41b-9d277042fc8a,8436.629325273041,1,2
+19,DJ,5c63a278-0500-46a6-9f04-f3ca05ef04fe,4237.214965058317,1,2
+20,DJ,c409443a-6ba3-4573-9867-5b457d899db1,6689.505079387127,1,2
+21,DJ,2573f66c-b946-4e8b-a78a-bfb7e53e34c5,9611.608888836075,1,2
+22,DJ,a62b6139-f8c9-4a4a-a2db-c9b8ceab83bc,7664.379324295004,1,2
+23,DJ,19a6c8f1-3a1b-4580-94fb-674b08d5cbdf,1433.2417133579456,1,2
+24,DJ,a4db2b7b-9f1b-4cfa-a446-4114fa92212b,6885.490787066221,1,2
+25,DJ,e532c351-1b63-474f-93f9-99fbee169a19,5030.278020258085,1,2
+26,DJ,d6bb5a7b-19a7-46fc-a50b-b573c0ff1a0c,5673.292565165794,1,2
+27,DJ,398b41a7-6c63-485c-8310-482c124c40df,2722.6525387306733,1,3
+28,DJ,3680cfd4-bc4e-4cc8-8b1d-30d9a8a0846a,6376.37705332378,1,3
+29,DJ,69e082a4-c0d7-4082-8340-db1c4fdaf65d,7275.961440048628,1,3
+30,DJ,15e4d80c-e874-4101-ae5a-7bb4f3c04199,5961.166633094767,1,3
+31,DJ,bf8ceb9d-5264-4ddf-a01d-dd1abda471fd,9732.423228152025,1,3
+32,DJ,fd6eee2e-152f-484e-baa9-56d1426f25cf,2920.1144540020628,1,3
+33,DJ,bb51ee57-bb34-4696-8934-0eaf38bb6128,7015.385539888436,1,3
+34,DJ,b0873ce0-04e5-41c6-92f1-72bcf52699b3,4125.466834871434,1,2
+35,DJ,c16bbb89-449b-4b7d-add7-97289e30f6e5,5387.802488101133,1,2
+36,DJ,3c840aa6-f170-4e5f-9378-35ef3a5fb6e3,947.9306402547084,1,2
+37,DJ,7424d2ab-3e2c-4f59-907c-827c1a1eb7d1,821.6405504090329,1,2
+38,DJ,ebb2d779-c4a1-4a00-8214-176006fa9e9e,6437.656989979924,1,2
+39,DJ,1a775a6b-8338-41d6-97f9-b7ff31f9511c,1379.7050183617455,1,2
+40,DJ,6e5694f9-a2a1-4a5a-b5ee-8073c49b77d2,4044.802694831746,1,2
+41,DJ,2dd2779e-b76d-4a87-9f6b-5a656812fd05,8505.547018469484,1,2
+42,DJ,dd0cebf8-4a79-4f9f-aab9-47f6623ca08a,9810.820924089396,1,2
+43,DJ,1f4a1204-4466-4a79-851d-58c3dfc0ea67,8748.799991853039,1,2
+44,DJ,2e2b354a-8184-4038-96fc-405d29d4465b,3418.097513149123,1,2
+45,DJ,8f39ddcc-8b18-4a72-ab67-6fea09cd561f,8916.652204886766,1,2
+46,DJ,5224b826-787a-4178-be68-2507c2b110b8,3329.334116933017,1,2
+47,DJ,30aef9c4-d54b-4c53-934d-2dd6f5d1e2f8,1337.5738230899458,1,2
+48,DJ,fa566326-a151-4336-ab5e-c251cafb3f62,9520.212360533284,1,2
+49,DJ,7d96deec-2aa8-4cf2-9d0a-6ab8ac3bab6e,1157.5203547943447,1,2
+50,DJ,43aeb33a-aa76-4046-82b9-0b459ee9301f,6206.616646389855,1,2
+51,DJ,363d8eb8-ac87-478b-b3d9-9b167654dd85,74.54001418416567,1,2
+52,DJ,7f6ede94-1d32-4256-a023-3b80e5942202,1344.5658635694613,1,2
+53,DJ,7725fe9f-8088-4950-b3f8-fd7f71e4cdd4,5274.120389419673,1,2
+54,DJ,6bd29d21-dab2-448c-8370-21708c7be73b,9546.757319658584,1,2
+55,DJ,e49e5465-2cdf-4570-b929-ac1c0d6ac94c,4580.161791063012,1,2
+56,DJ,3b501a20-786b-48ab-b039-f5f32596a9c1,8080.302384379626,1,2
+57,DJ,396ef9cd-b5c5-4e4e-b2ea-75b4bba3c35d,8916.76115426343,1,2
+58,DJ,894369e9-a15d-4cd7-850b-2dbdd18769f0,9608.071065814527,1,2
+59,DJ,e4c49b78-fe95-4ade-8656-a023841f453e,7421.935498049246,1,2
+60,DJ,330e2d38-5a13-4657-a2b7-cc17c880b34c,789.58804853967,1,2
+61,DJ,bfebb260-7b7e-45bd-b53e-18b05cac7a84,4210.156178735921,1,2
+62,DJ,cb0837ce-ef4b-48dc-8e0e-cead49fddfe1,8401.414333984216,1,2
+63,DJ,a064e929-1d1d-463c-8574-eb99f6daf99f,5496.485747560991,1,2
+64,DJ,a6fdd668-5712-46f3-98d3-21e3eaf9bda2,7562.3947992268995,1,2
+65,DJ,055a17ab-cc74-4529-92f5-963bfeea243e,2127.846013523674,1,2
+66,DJ,e431ab99-d167-47dc-ae96-90441d42d460,3403.34459349267,1,2
+67,DJ,2647d019-5166-4492-9137-d46fc8c258d9,2479.40167491524,1,2
+68,DJ,7b070aee-9e63-41c0-9cab-62999c06bded,4207.182877534127,1,2
+69,DJ,dc245df8-058e-4473-9479-3575b3cb1f2e,35.34858391666895,1,2
+70,DJ,0fa15c45-1169-4324-b1a0-50ea3ca2c323,1923.9855638460335,1,2
+71,DJ,773980c1-d2e9-4b91-b25d-f16e6b9f75cf,6058.943072616041,1,2
+72,DJ,8eb6e9e0-4e78-4b06-a3d9-c3344f3311f6,3951.9072971020264,1,2
+73,DJ,24be0069-30a8-4729-ab9d-014f6fa05f7b,1748.0423086871488,1,2
+74,DJ,b5577e15-354a-4850-b9dd-0d6e78aaf02b,7241.717028774275,1,2
+75,DJ,2bef29f7-af9f-4974-8326-18abf43341a5,3757.6312523969746,1,2
+76,DJ,a0848617-18e1-4753-93e2-40a1f722b9af,3858.290637341808,1,2
+77,DJ,0f44bbcf-450b-4a28-8bbb-aa38dfe4437d,8443.9332504539,1,2
+78,DJ,b5c6651c-0940-4692-abd0-402c9a021cd9,3001.574725935402,1,2
+79,DJ,7ab054ed-89e1-444a-9efa-75105d66cdf2,1546.130982130074,1,2
+80,DJ,2bff953d-a353-4b57-a191-d7a7ea306b5c,2693.321184417878,1,2
+81,DJ,864af258-0647-4106-bbfe-a7945b1e8d79,3078.093784037653,1,2
+82,DJ,b9813cf3-606e-45b2-b304-dbd94a3bed5d,9571.516934890822,1,2
+83,DJ,d13f7bff-5337-48b3-8835-42254850cff1,166.72214914982052,1,2
+84,DJ,9f406b8f-9918-49a7-a5ec-b571cc9c7e32,4855.445546324122,1,2
+85,DJ,6348e3e7-a6c6-48a3-ba85-52d5208b2903,564.7057146352108,1,2
+86,DJ,9ee53a42-4dd4-4c06-a469-43edfa88ee27,1060.4730232773097,1,2
+87,DJ,46d70f59-2943-4872-b546-53949618b92d,5109.047994188269,1,2
+88,DJ,3a4d0e58-5763-4eae-8fe2-b20e3734b585,7618.949219443407,1,2
+89,DJ,697eb8eb-8b2d-48a5-a407-10f3775c4bf7,924.2763742255678,1,2
+90,DJ,1f7f54ff-adfd-44e5-aa21-6aa3c097c253,4524.360388675307,1,2
+91,DJ,2bad5b40-912a-4b92-9631-88104c107085,7518.71918562579,1,2
+92,DJ,6661255f-3d0f-4c92-b7bc-64f4c0d1fc5e,4438.526194512614,1,2
+93,DJ,fef5c78f-9cf0-4e87-b6b7-e5371e0edee6,2837.7395558410035,1,2
+94,DJ,d6187a8f-20e3-4777-b7f5-628107ece8ac,3521.0175997642955,1,2
+95,DJ,d86c59df-849b-48c2-89a9-33112d566826,4969.7428075973785,1,2
+96,DJ,8129fb27-6124-4e4a-b337-d9f1a1455626,5347.060107305312,1,2
+97,DJ,0e32af06-83fe-4970-b82a-79f2a9a90ff2,605.7942274117601,1,2
+98,DJ,af1747c8-a2bb-4f41-8316-d5b2dc346a6a,6622.2700822873485,1,2
+99,DJ,8fdc7072-d6ec-4d10-9162-51291297e0c9,2994.635348877425,1,2
+100,DJ,22812b4f-3ac2-43e8-b319-fd98b80c60d6,6583.149033594026,1,2
+101,DJ,f46077e4-23b7-4b2b-9783-872dcef4f19e,8380.973246859385,1,0
+102,DJ,91f89c31-fa12-4f47-87f5-392ff0f26589,7751.10893922471,1,0
+103,DJ,8d426c0c-3461-4f8f-9b36-2ce021bed7f4,541.4716846055135,1,0
+
+*/
+

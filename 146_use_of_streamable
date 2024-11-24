@@ -1,0 +1,153 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+     List<Product>findAllByCategoryName(String categoryName);
+     Streamable<Product> findAllByCategory_Name(String categoryName);
+     Streamable<Product> findAllByNameLike(String name);
+}
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Logger;
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	public void run(String... args) throws Exception {
+
+		productRepository.findAllByNameLike("%Phone%").and(productRepository.findAllByCategory_Name("I_PHONE"))
+				.forEach(System.out::println);
+
+	}
+}
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price 
+    from
+        Product p1_0 
+    where
+        p1_0.name like ? escape '\'
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price 
+    from
+        Product p1_0 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+Product(id=1, name=iPhone 14, price=120000.0, categoryName=PHONE, category=Category(id=1, name=I_PHONE))
+Product(id=2, name=SAMSUNG Phone Ultra s9, price=90000.0, categoryName=PHONE, category=Category(id=2, name=S_PHONE))
+Product(id=1, name=iPhone 14, price=120000.0, categoryName=PHONE, category=Category(id=1, name=I_PHONE))
+
+*/
+
+/*
+Phone_table:
+
+1,PHONE,iPhone 14,120000,1
+2,PHONE,SAMSUNG Phone Ultra s9,90000,2
+3,LAPTOP,Dell Laptop,54000,3
+
+
+Category_talbe:
+
+1,I_PHONE
+2,S_PHONE
+3,lAPTOP
+
+*/

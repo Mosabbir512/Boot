@@ -1,0 +1,208 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position,Limit limit);
+}
+
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.*;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		var position=ScrollPosition.offset(30);
+		var window=productRepository.findProductsByCategory_NameInOrderById(List.of("I_PHONE","S_PHONE"),position,Limit.of(10));
+		window.forEach(System.out::println);
+		System.out.println("--------------------");
+		window=productRepository.findProductsByCategory_NameInOrderById(List.of("I_PHONE","S_PHONE"),window.positionAt(window.size()-1),Limit.of(10));
+         for(Product p:window){
+			 System.out.println(p);
+		 }
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+
+
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+    order by
+        p1_0.id 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+2024-11-26T15:36:28.382+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-11-26T15:36:28.383+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-11-26T15:36:28.383+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:INTEGER) <- [31]
+2024-11-26T15:36:28.386+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:INTEGER) <- [11]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-11-26T15:36:28.446+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Product(id=33, name=bb51ee57-bb34-4696-8934-0eaf38bb6128, price=7015.385539888436, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=34, name=b0873ce0-04e5-41c6-92f1-72bcf52699b3, price=4125.466834871434, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=35, name=c16bbb89-449b-4b7d-add7-97289e30f6e5, price=5387.802488101133, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=36, name=3c840aa6-f170-4e5f-9378-35ef3a5fb6e3, price=947.9306402547084, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=37, name=7424d2ab-3e2c-4f59-907c-827c1a1eb7d1, price=821.6405504090329, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=38, name=ebb2d779-c4a1-4a00-8214-176006fa9e9e, price=6437.656989979924, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=39, name=1a775a6b-8338-41d6-97f9-b7ff31f9511c, price=1379.7050183617455, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=40, name=6e5694f9-a2a1-4a5a-b5ee-8073c49b77d2, price=4044.802694831746, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=41, name=2dd2779e-b76d-4a87-9f6b-5a656812fd05, price=8505.547018469484, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=42, name=dd0cebf8-4a79-4f9f-aab9-47f6623ca08a, price=9810.820924089396, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+--------------------
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+    order by
+        p1_0.id 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+2024-11-26T15:36:28.521+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-11-26T15:36:28.521+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-11-26T15:36:28.522+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:INTEGER) <- [41]
+2024-11-26T15:36:28.522+06:00 TRACE 16416 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:INTEGER) <- [11]
+Product(id=43, name=1f4a1204-4466-4a79-851d-58c3dfc0ea67, price=8748.799991853039, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=44, name=2e2b354a-8184-4038-96fc-405d29d4465b, price=3418.097513149123, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=45, name=8f39ddcc-8b18-4a72-ab67-6fea09cd561f, price=8916.652204886766, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=46, name=5224b826-787a-4178-be68-2507c2b110b8, price=3329.334116933017, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=47, name=30aef9c4-d54b-4c53-934d-2dd6f5d1e2f8, price=1337.5738230899458, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=48, name=fa566326-a151-4336-ab5e-c251cafb3f62, price=9520.212360533284, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=49, name=7d96deec-2aa8-4cf2-9d0a-6ab8ac3bab6e, price=1157.5203547943447, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=50, name=43aeb33a-aa76-4046-82b9-0b459ee9301f, price=6206.616646389855, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=51, name=363d8eb8-ac87-478b-b3d9-9b167654dd85, price=74.54001418416567, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=52, name=7f6ede94-1d32-4256-a023-3b80e5942202, price=1344.5658635694613, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+*/
+

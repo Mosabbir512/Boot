@@ -1,0 +1,268 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position);
+}
+
+
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.*;
+import org.springframework.data.repository.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		var position=ScrollPosition.offset();
+		var window=productRepository.findProductsByCategory_NameInOrderById(List.of("I_PHONE","S_PHONE"),position);
+		window.forEach(System.out::println);
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+
+
+
+
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+    order by
+        p1_0.id
+2024-11-26T15:01:11.736+06:00 TRACE 11568 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-11-26T15:01:11.736+06:00 TRACE 11568 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-11-26T15:01:11.772+06:00 TRACE 11568 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-11-26T15:01:11.799+06:00 TRACE 11568 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+Product(id=1, name=iPhone 14, price=120000.0, categoryName=PHONE, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=2, name=SAMSUNG Phone Ultra s9, price=90000.0, categoryName=PHONE, version=3, category=Category(id=2, name=S_PHONE))
+Product(id=4, name=6b49c195-ffdf-4e80-b19d-11306dcbb41d, price=6040.2338562126415, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=5, name=99789cf1-b85f-40a8-8ce4-d2a37afba482, price=3156.047287170838, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=6, name=caaefdce-0e2a-40ad-8f51-41ba5871be30, price=4522.571725558182, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=7, name=d2fef567-adab-4734-a5e6-485a63ef400f, price=2212.342160444647, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=8, name=a570130f-0c15-4f73-8754-f46181a8154a, price=8220.17239763943, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=9, name=ae9c0a74-eb6a-4ee9-aad8-6d6f60809c34, price=7638.697764502526, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=10, name=089076c6-b68f-4696-983f-a7a6c791b29c, price=3939.1026575065525, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=11, name=9d28fcd1-3143-4ddf-9c7e-c78f3f2a6ee8, price=1902.0235335351242, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=12, name=c4a01e33-7604-4b64-a0c1-2602e20a713f, price=4281.156426878825, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=13, name=a88c16c7-d705-4c28-8df2-b94db4fca3d6, price=6817.378865200459, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=14, name=5bd488fe-4b49-4004-8c04-3d2b8c0079e0, price=6126.875144483397, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=15, name=2dc5e4fa-b4f1-47f5-adce-3d097d155ec0, price=4604.277036009481, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=16, name=a190d0e4-6c30-4969-b848-f5c598786ea7, price=5586.627955613861, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=17, name=189f5883-dc08-4c4f-bc16-2e62c17380a2, price=2260.829700571286, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=18, name=9329b902-c886-40a7-b41b-9d277042fc8a, price=8436.629325273041, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=19, name=5c63a278-0500-46a6-9f04-f3ca05ef04fe, price=4237.214965058317, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=20, name=c409443a-6ba3-4573-9867-5b457d899db1, price=6689.505079387127, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=21, name=2573f66c-b946-4e8b-a78a-bfb7e53e34c5, price=9611.608888836075, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=22, name=a62b6139-f8c9-4a4a-a2db-c9b8ceab83bc, price=7664.379324295004, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=23, name=19a6c8f1-3a1b-4580-94fb-674b08d5cbdf, price=1433.2417133579456, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=24, name=a4db2b7b-9f1b-4cfa-a446-4114fa92212b, price=6885.490787066221, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=25, name=e532c351-1b63-474f-93f9-99fbee169a19, price=5030.278020258085, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=26, name=d6bb5a7b-19a7-46fc-a50b-b573c0ff1a0c, price=5673.292565165794, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=27, name=398b41a7-6c63-485c-8310-482c124c40df, price=2722.6525387306733, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=28, name=3680cfd4-bc4e-4cc8-8b1d-30d9a8a0846a, price=6376.37705332378, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=29, name=69e082a4-c0d7-4082-8340-db1c4fdaf65d, price=7275.961440048628, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=30, name=15e4d80c-e874-4101-ae5a-7bb4f3c04199, price=5961.166633094767, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=31, name=bf8ceb9d-5264-4ddf-a01d-dd1abda471fd, price=9732.423228152025, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=32, name=fd6eee2e-152f-484e-baa9-56d1426f25cf, price=2920.1144540020628, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=33, name=bb51ee57-bb34-4696-8934-0eaf38bb6128, price=7015.385539888436, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=34, name=b0873ce0-04e5-41c6-92f1-72bcf52699b3, price=4125.466834871434, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=35, name=c16bbb89-449b-4b7d-add7-97289e30f6e5, price=5387.802488101133, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=36, name=3c840aa6-f170-4e5f-9378-35ef3a5fb6e3, price=947.9306402547084, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=37, name=7424d2ab-3e2c-4f59-907c-827c1a1eb7d1, price=821.6405504090329, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=38, name=ebb2d779-c4a1-4a00-8214-176006fa9e9e, price=6437.656989979924, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=39, name=1a775a6b-8338-41d6-97f9-b7ff31f9511c, price=1379.7050183617455, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=40, name=6e5694f9-a2a1-4a5a-b5ee-8073c49b77d2, price=4044.802694831746, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=41, name=2dd2779e-b76d-4a87-9f6b-5a656812fd05, price=8505.547018469484, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=42, name=dd0cebf8-4a79-4f9f-aab9-47f6623ca08a, price=9810.820924089396, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=43, name=1f4a1204-4466-4a79-851d-58c3dfc0ea67, price=8748.799991853039, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=44, name=2e2b354a-8184-4038-96fc-405d29d4465b, price=3418.097513149123, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=45, name=8f39ddcc-8b18-4a72-ab67-6fea09cd561f, price=8916.652204886766, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=46, name=5224b826-787a-4178-be68-2507c2b110b8, price=3329.334116933017, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=47, name=30aef9c4-d54b-4c53-934d-2dd6f5d1e2f8, price=1337.5738230899458, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=48, name=fa566326-a151-4336-ab5e-c251cafb3f62, price=9520.212360533284, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=49, name=7d96deec-2aa8-4cf2-9d0a-6ab8ac3bab6e, price=1157.5203547943447, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=50, name=43aeb33a-aa76-4046-82b9-0b459ee9301f, price=6206.616646389855, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=51, name=363d8eb8-ac87-478b-b3d9-9b167654dd85, price=74.54001418416567, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=52, name=7f6ede94-1d32-4256-a023-3b80e5942202, price=1344.5658635694613, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=53, name=7725fe9f-8088-4950-b3f8-fd7f71e4cdd4, price=5274.120389419673, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=54, name=6bd29d21-dab2-448c-8370-21708c7be73b, price=9546.757319658584, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=55, name=e49e5465-2cdf-4570-b929-ac1c0d6ac94c, price=4580.161791063012, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=56, name=3b501a20-786b-48ab-b039-f5f32596a9c1, price=8080.302384379626, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=57, name=396ef9cd-b5c5-4e4e-b2ea-75b4bba3c35d, price=8916.76115426343, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=58, name=894369e9-a15d-4cd7-850b-2dbdd18769f0, price=9608.071065814527, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=59, name=e4c49b78-fe95-4ade-8656-a023841f453e, price=7421.935498049246, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=60, name=330e2d38-5a13-4657-a2b7-cc17c880b34c, price=789.58804853967, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=61, name=bfebb260-7b7e-45bd-b53e-18b05cac7a84, price=4210.156178735921, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=62, name=cb0837ce-ef4b-48dc-8e0e-cead49fddfe1, price=8401.414333984216, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=63, name=a064e929-1d1d-463c-8574-eb99f6daf99f, price=5496.485747560991, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=64, name=a6fdd668-5712-46f3-98d3-21e3eaf9bda2, price=7562.3947992268995, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=65, name=055a17ab-cc74-4529-92f5-963bfeea243e, price=2127.846013523674, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=66, name=e431ab99-d167-47dc-ae96-90441d42d460, price=3403.34459349267, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=67, name=2647d019-5166-4492-9137-d46fc8c258d9, price=2479.40167491524, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=68, name=7b070aee-9e63-41c0-9cab-62999c06bded, price=4207.182877534127, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=69, name=dc245df8-058e-4473-9479-3575b3cb1f2e, price=35.34858391666895, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=70, name=0fa15c45-1169-4324-b1a0-50ea3ca2c323, price=1923.9855638460335, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=71, name=773980c1-d2e9-4b91-b25d-f16e6b9f75cf, price=6058.943072616041, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=72, name=8eb6e9e0-4e78-4b06-a3d9-c3344f3311f6, price=3951.9072971020264, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=73, name=24be0069-30a8-4729-ab9d-014f6fa05f7b, price=1748.0423086871488, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=74, name=b5577e15-354a-4850-b9dd-0d6e78aaf02b, price=7241.717028774275, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=75, name=2bef29f7-af9f-4974-8326-18abf43341a5, price=3757.6312523969746, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=76, name=a0848617-18e1-4753-93e2-40a1f722b9af, price=3858.290637341808, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=77, name=0f44bbcf-450b-4a28-8bbb-aa38dfe4437d, price=8443.9332504539, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=78, name=b5c6651c-0940-4692-abd0-402c9a021cd9, price=3001.574725935402, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=79, name=7ab054ed-89e1-444a-9efa-75105d66cdf2, price=1546.130982130074, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=80, name=2bff953d-a353-4b57-a191-d7a7ea306b5c, price=2693.321184417878, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=81, name=864af258-0647-4106-bbfe-a7945b1e8d79, price=3078.093784037653, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=82, name=b9813cf3-606e-45b2-b304-dbd94a3bed5d, price=9571.516934890822, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=83, name=d13f7bff-5337-48b3-8835-42254850cff1, price=166.72214914982052, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=84, name=9f406b8f-9918-49a7-a5ec-b571cc9c7e32, price=4855.445546324122, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=85, name=6348e3e7-a6c6-48a3-ba85-52d5208b2903, price=564.7057146352108, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=86, name=9ee53a42-4dd4-4c06-a469-43edfa88ee27, price=1060.4730232773097, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=87, name=46d70f59-2943-4872-b546-53949618b92d, price=5109.047994188269, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=88, name=3a4d0e58-5763-4eae-8fe2-b20e3734b585, price=7618.949219443407, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=89, name=697eb8eb-8b2d-48a5-a407-10f3775c4bf7, price=924.2763742255678, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=90, name=1f7f54ff-adfd-44e5-aa21-6aa3c097c253, price=4524.360388675307, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=91, name=2bad5b40-912a-4b92-9631-88104c107085, price=7518.71918562579, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=92, name=6661255f-3d0f-4c92-b7bc-64f4c0d1fc5e, price=4438.526194512614, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=93, name=fef5c78f-9cf0-4e87-b6b7-e5371e0edee6, price=2837.7395558410035, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=94, name=d6187a8f-20e3-4777-b7f5-628107ece8ac, price=3521.0175997642955, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=95, name=d86c59df-849b-48c2-89a9-33112d566826, price=4969.7428075973785, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=96, name=8129fb27-6124-4e4a-b337-d9f1a1455626, price=5347.060107305312, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=97, name=0e32af06-83fe-4970-b82a-79f2a9a90ff2, price=605.7942274117601, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=98, name=af1747c8-a2bb-4f41-8316-d5b2dc346a6a, price=6622.2700822873485, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=99, name=8fdc7072-d6ec-4d10-9162-51291297e0c9, price=2994.635348877425, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=100, name=22812b4f-3ac2-43e8-b319-fd98b80c60d6, price=6583.149033594026, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=101, name=f46077e4-23b7-4b2b-9783-872dcef4f19e, price=8380.973246859385, categoryName=DJ, version=0, category=Category(id=1, name=I_PHONE))
+Product(id=102, name=91f89c31-fa12-4f47-87f5-392ff0f26589, price=7751.10893922471, categoryName=DJ, version=0, category=Category(id=1, name=I_PHONE))
+Product(id=103, name=8d426c0c-3461-4f8f-9b36-2ce021bed7f4, price=541.4716846055135, categoryName=DJ, version=0, category=Category(id=1, name=I_PHONE))
+2024-11-26T15:01:25.014+06:00  INFO 11568 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'pgsql-unit'
+2024-11-26T15:01:25.028+06:00  INFO 11568 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-11-26T15:01:25.191+06:00  INFO 11568 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+*/

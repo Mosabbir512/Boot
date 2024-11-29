@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+</head>
+<body>
+<table id="product_table" class="display" style="width:100%">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Category</th>
+    </tr>
+    </thead>
+</table>
+
+<script>
+    new DataTable('#product_table', {
+
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url:'/api/v1/products',
+            type:'GET'
+        },
+        columns :[
+            {data:'id'},
+            {data:'name'},
+            {data:'price'},
+            {data: 'category.name'}
+        ]
+    });
+</script>
+</body>
+</html>
+
+
+package com.sdlc.pro.edj.dto;
+
+import com.sdlc.pro.edj.entity.Product;
+
+import java.util.List;
+
+public record ProductTableDTO (int draw, long recordsTotal, long recordsFiltered, List<Product> data){
+
+}
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position,Limit limit,Sort sort);
+   @Query("""
+            select p from Product p 
+            where lower(p.name) like lower(concat('%',?1,'%')) 
+            or lower(p.category.name) like lower(concat('%',?1,'%')) 
+            """)
+    Page<Product> findProductsByFilter(String searchValue,Pageable pageable);
+}
+
+
+
+
+package com.sdlc.pro.edj.controller;
+
+import com.sdlc.pro.edj.dto.ProductTableDTO;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.event.spi.SaveOrUpdateEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+
+import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.springframework.data.domain.Sort.Direction.DESC;
+
+@Controller
+@RequiredArgsConstructor
+public class ProductController {
+    private final ProductRepository productRepository;
+    @GetMapping("/product-page")
+    public String productPage(){
+        return "product-page";
+    }
+    @ResponseBody
+    @GetMapping("/api/v1/products")
+    public ProductTableDTO getProducts(
+            @RequestParam("draw") int draw,
+            @RequestParam(value = "start",defaultValue = "0") int start,
+            @RequestParam(value = "length",defaultValue = "10") int pageSize,
+            @RequestParam(value = "search[value]",defaultValue = "") String searchValue,
+            @RequestParam(value = "order[0][column]",defaultValue = "0") int sortBy,
+            @RequestParam(value = "order[0][dir",defaultValue = "asc") String dir
+    ){
+        String[] columnNames={"id","name","price","category.name"};
+        Sort sort=Sort.by(dir.equalsIgnoreCase("asc")? ASC:DESC,columnNames[sortBy]);
+        Pageable pageable= PageRequest.of(start/pageSize,pageSize,sort);
+        Page<Product>productPage=productRepository.findProductsByFilter(searchValue.trim(),pageable);
+        return new ProductTableDTO(
+                draw,productPage.getTotalElements(),
+                productPage.getTotalElements(),
+                productPage.getContent()
+        );
+    }
+}
+
+

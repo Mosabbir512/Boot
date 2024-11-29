@@ -91,6 +91,7 @@ public class EsobDataJpaApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 
 		var position=ScrollPosition.forward(Map.of("id","31","price",1000 ));
+    	      //  var position=ScrollPosition.of(Map.of("id","31","price",1000 ), ScrollPosition.Direction.FORWARD);
 		var sort=Sort.by(Sort.Direction.ASC,"price");
 		var window=productRepository.findProductsByCategory_NameInOrderById(List.of("I_PHONE","S_PHONE"),position,Limit.of(10),sort);
 		window.forEach(System.out::println);

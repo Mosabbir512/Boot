@@ -1,0 +1,109 @@
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.*;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.support.WindowIterator;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		var intPosition=ScrollPosition.of(Map.of("id","0","price",1000 ), ScrollPosition.Direction.FORWARD);
+		var sort=Sort.by(Sort.Direction.ASC,"price");
+
+		var it=WindowIterator.of(position -> productRepository.findProductsByCategory_NameInOrderById(List.of("I_PHONE","S_PHONE"),position,Limit.of(10),sort))
+				.startingAt(intPosition);
+
+		while (it.hasNext()){
+			System.out.println(it.next());
+			Thread.sleep(1000);
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+
+
+}
+
+
+

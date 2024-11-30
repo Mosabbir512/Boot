@@ -5,6 +5,9 @@ public interface ProductRepository extends JpaRepository<Product,Integer> {
    @Query("select new Map(p.id as id,p.name as name,p.price as price )from Product p where p.id=?1")
    Map<String,?> findProductById(Integer id);
 
+// @Query("select new Map(p.id as id,p.name as name,p.price as price,p.category.name as categoryName )from Product p where p.id=?1")
+//   Map<String,?> findProductById(Integer id);
+
 }
 
 
@@ -80,6 +83,7 @@ public class EsobDataJpaApplication implements CommandLineRunner {
 
         var map=productRepository.findProductById(4);
 		System.out.println(map.get("id")+" , "+ map.get("name")+" , "+ map.get("price"));
+//   System.out.println(map.get("id")+" , "+ map.get("name")+" , "+ map.get("price")+" , "+map.get("categoryName"));  id categoryName cai
 	}
 
 	public static void main(String[] args) throws Exception {

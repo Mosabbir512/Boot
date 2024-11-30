@@ -1,0 +1,255 @@
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Table(indexes = {
+        @Index(name = "price_index",columnList = "price"),
+        @Index(name = "id_and_price_index",columnList = "id, price")
+})
+@Entity
+@Setter
+@ToString
+@Getter
+@NoArgsConstructor
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Double price;
+    private String categoryName;
+
+    @Version
+    private Long version;
+    @ManyToOne
+    private Category category;
+
+    public Product(Integer id, String name, Double price, String categoryName) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.categoryName = categoryName;
+    }
+}
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.Product;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.util.Streamable;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position,Limit limit,Sort sort);
+   @Query("""
+            select p from Product p 
+            where lower(p.name) like lower(concat('%',?1,'%')) 
+            or lower(p.category.name) like lower(concat('%',?1,'%')) 
+            """)
+    Page<Product> findProductsByFilter(String searchValue,Pageable pageable);
+
+
+  // @Query("select new Map(p.id as id,p.name as name,p.price as price,p.category.name as categoryName )from Product p where p.id=?1")
+    //@Query("select new Product(p.id,p.name,p.price,p.category.name) from Product p where p.id=?1")
+     Product findProductById(Integer id);  // just only entity base projection // when @Query then class based projection
+    @Query("select new com.sdlc.pro.edj.dto.ProductNamePriceDTO(p.id,p.name,p.price,p.category.name) from Product p where p.category.name=?1")
+    Page<ProductNamePriceDTO> findProductsByCategoryName(String name,Pageable pageable);
+
+}
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.config.PgsqlDatabaseConfig;
+import com.sdlc.pro.edj.entity.Category;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.StudentEntity;
+import com.sdlc.pro.edj.repository.PgSqlStudentRepositoryCustom;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+import jakarta.persistence.*;
+import jakarta.persistence.spi.ClassTransformer;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceUnitInfo;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcIsolationDelegate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.*;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.support.WindowIterator;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.*;
+import java.util.function.Function;
+import java.util.logging.Logger;
+
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+        var page=productRepository.findProductsByCategoryName("I_PHONE",PageRequest.of(1,20));
+		page.getContent().forEach(System.out::println);
+
+		var product=productRepository.findProductById(4);
+		System.out.println(product);
+		product.setName("new name");
+
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+	
+	}
+}
+
+
+
+/*
+
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.name,
+        p1_0.price,
+        c1_0.name 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name=? 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+2024-11-30T09:30:34.982+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-11-30T09:30:34.983+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [20]
+2024-11-30T09:30:34.985+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:INTEGER) <- [20]
+Hibernate: 
+    select
+        count(p1_0.id) 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name=?
+2024-11-30T09:30:35.021+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+ProductNamePriceDTO(name=6bd29d21-dab2-448c-8370-21708c7be73b, price=9546.757319658584, pid=54, categoryName=I_PHONE)
+ProductNamePriceDTO(name=e49e5465-2cdf-4570-b929-ac1c0d6ac94c, price=4580.161791063012, pid=55, categoryName=I_PHONE)
+ProductNamePriceDTO(name=3b501a20-786b-48ab-b039-f5f32596a9c1, price=8080.302384379626, pid=56, categoryName=I_PHONE)
+ProductNamePriceDTO(name=396ef9cd-b5c5-4e4e-b2ea-75b4bba3c35d, price=8916.76115426343, pid=57, categoryName=I_PHONE)
+ProductNamePriceDTO(name=894369e9-a15d-4cd7-850b-2dbdd18769f0, price=9608.071065814527, pid=58, categoryName=I_PHONE)
+ProductNamePriceDTO(name=e4c49b78-fe95-4ade-8656-a023841f453e, price=7421.935498049246, pid=59, categoryName=I_PHONE)
+ProductNamePriceDTO(name=330e2d38-5a13-4657-a2b7-cc17c880b34c, price=789.58804853967, pid=60, categoryName=I_PHONE)
+ProductNamePriceDTO(name=bfebb260-7b7e-45bd-b53e-18b05cac7a84, price=4210.156178735921, pid=61, categoryName=I_PHONE)
+ProductNamePriceDTO(name=cb0837ce-ef4b-48dc-8e0e-cead49fddfe1, price=8401.414333984216, pid=62, categoryName=I_PHONE)
+ProductNamePriceDTO(name=6b49c195-ffdf-4e80-b19d-11306dcbb41d, price=6040.2338562126415, pid=4, categoryName=I_PHONE)
+ProductNamePriceDTO(name=99789cf1-b85f-40a8-8ce4-d2a37afba482, price=3156.047287170838, pid=5, categoryName=I_PHONE)
+ProductNamePriceDTO(name=398b41a7-6c63-485c-8310-482c124c40df, price=2722.6525387306733, pid=27, categoryName=I_PHONE)
+ProductNamePriceDTO(name=3680cfd4-bc4e-4cc8-8b1d-30d9a8a0846a, price=6376.37705332378, pid=28, categoryName=I_PHONE)
+ProductNamePriceDTO(name=69e082a4-c0d7-4082-8340-db1c4fdaf65d, price=7275.961440048628, pid=29, categoryName=I_PHONE)
+ProductNamePriceDTO(name=15e4d80c-e874-4101-ae5a-7bb4f3c04199, price=5961.166633094767, pid=30, categoryName=I_PHONE)
+ProductNamePriceDTO(name=bf8ceb9d-5264-4ddf-a01d-dd1abda471fd, price=9732.423228152025, pid=31, categoryName=I_PHONE)
+ProductNamePriceDTO(name=fd6eee2e-152f-484e-baa9-56d1426f25cf, price=2920.1144540020628, pid=32, categoryName=I_PHONE)
+ProductNamePriceDTO(name=bb51ee57-bb34-4696-8934-0eaf38bb6128, price=7015.385539888436, pid=33, categoryName=I_PHONE)
+ProductNamePriceDTO(name=caaefdce-0e2a-40ad-8f51-41ba5871be30, price=4522.571725558182, pid=6, categoryName=I_PHONE)
+ProductNamePriceDTO(name=d2fef567-adab-4734-a5e6-485a63ef400f, price=2212.342160444647, pid=7, categoryName=I_PHONE)
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    where
+        p1_0.id=?
+2024-11-30T09:30:35.061+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [4]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-11-30T09:30:35.080+06:00 TRACE 23256 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Product(id=4, name=6b49c195-ffdf-4e80-b19d-11306dcbb41d, price=6040.2338562126415, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Hibernate: 
+    update
+        Product 
+    set
+        category_id=?,
+        categoryName=?,
+        name=?,
+        price=?,
+        version=? 
+    where
+        id=? 
+        and version=?
+        */
+        
+

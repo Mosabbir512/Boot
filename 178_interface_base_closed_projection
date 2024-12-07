@@ -1,0 +1,117 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.dto.ProductDTO;
+import com.sdlc.pro.edj.dto.ProductIdNamePriceDTO;
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.Product;
+
+import com.sdlc.pro.edj.projection.ProductIdNamePriceProjection;
+import com.sdlc.pro.edj.projection.ProductNamePriceCategoryProjection;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position,Limit limit,Sort sort);
+   @Query("""
+            select p from Product p 
+            where lower(p.name) like lower(concat('%',?1,'%')) 
+            or lower(p.category.name) like lower(concat('%',?1,'%')) 
+            """)
+    Page<Product> findProductsByFilter(String searchValue,Pageable pageable);   // when  api call hobe then aita call hobe
+
+
+    @Query("select p.name as name,p.price as price,p.category as categoryName from Product p where p.id=?1")
+    ProductNamePriceCategoryProjection findProductById(Integer id);
+
+
+}
+
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+import org.springframework.transaction.annotation.Transactional;
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		var product = productRepository.findProductById(2);
+		System.out.println(product);
+
+		System.out.println(product.getName()+" "+product.getPrice());
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+
+		 */
+	}
+}
+
+
+
+
+/*
+
+Hibernate: 
+    select
+        p1_0.name,
+        p1_0.price,
+        c1_0.id,
+        c1_0.name 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        p1_0.id=?
+2024-12-07T10:18:34.600+06:00 TRACE 22936 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+org.springframework.data.jpa.repository.query.AbstractJpaQuery$TupleConverter$TupleBackedMap@7ba0c0e5
+SAMSUNG Phone Ultra s9 90000.0
+
+*/
+
+

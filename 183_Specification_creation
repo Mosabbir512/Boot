@@ -1,0 +1,176 @@
+package com.sdlc.pro.edj.specification;
+
+import com.sdlc.pro.edj.entity.Product;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.Set;
+
+public interface ProductSpecification {
+    static Specification<Product> byCategoryName(Set<String> categoryNames){
+        if(categoryNames==null || categoryNames.isEmpty())return null;
+        return (root, query, cb) -> root.get("category").get("name").in(categoryNames);
+    }
+
+    static Specification<Product> byPriceRance(Double start,Double end){
+        if(start==null || end==null || end<start)return null;
+        return (root, query, cb) -> cb.and(
+             cb.greaterThanOrEqualTo(root.get("price"),start),
+             cb.lessThanOrEqualTo(root.get("price"),end)
+        );
+    }
+    static Specification<Product>nameLike(String name){
+        if(name==null || name.isBlank())return null;
+        return (root, query, cb) -> cb.like(root.get("name"),"%"+name+"%");
+    }
+}
+
+
+
+
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+
+import com.sdlc.pro.edj.specification.ProductSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.Set;
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		Specification<Product> spec=Specification.where(
+				ProductSpecification.byCategoryName(Set.of("I_PHONE","S_PHONE"))
+						.and(ProductSpecification.byPriceRance(5000.00,10000.00))
+						.and(ProductSpecification.nameLike("f"))
+
+		);
+        Page<Product> productPage=productRepository.findAll(spec, PageRequest.of(1,10));
+		productPage.forEach(System.out::println);
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+	
+	}
+}
+
+/*
+
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+        and p1_0.price>=? 
+        and p1_0.price<=? 
+        and p1_0.name like ? escape '' 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+2024-12-07T12:54:20.328+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-12-07T12:54:20.328+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-12-07T12:54:20.328+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:DOUBLE) <- [5000.0]
+2024-12-07T12:54:20.331+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:DOUBLE) <- [10000.0]
+2024-12-07T12:54:20.331+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (5:VARCHAR) <- [%f%]
+2024-12-07T12:54:20.331+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (6:INTEGER) <- [10]
+2024-12-07T12:54:20.331+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (7:INTEGER) <- [10]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-12-07T12:54:20.371+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    select
+        count(p1_0.id) 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+        and p1_0.price>=? 
+        and p1_0.price<=? 
+        and p1_0.name like ? escape ''
+2024-12-07T12:54:20.421+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-12-07T12:54:20.421+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-12-07T12:54:20.422+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:DOUBLE) <- [5000.0]
+2024-12-07T12:54:20.422+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:DOUBLE) <- [10000.0]
+2024-12-07T12:54:20.422+06:00 TRACE 21048 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (5:VARCHAR) <- [%f%]
+
+Product(id=57, name=396ef9cd-b5c5-4e4e-b2ea-75b4bba3c35d, price=8916.76115426343, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=58, name=894369e9-a15d-4cd7-850b-2dbdd18769f0, price=9608.071065814527, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=59, name=e4c49b78-fe95-4ade-8656-a023841f453e, price=7421.935498049246, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=62, name=cb0837ce-ef4b-48dc-8e0e-cead49fddfe1, price=8401.414333984216, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=28, name=3680cfd4-bc4e-4cc8-8b1d-30d9a8a0846a, price=6376.37705332378, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=29, name=69e082a4-c0d7-4082-8340-db1c4fdaf65d, price=7275.961440048628, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=30, name=15e4d80c-e874-4101-ae5a-7bb4f3c04199, price=5961.166633094767, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=31, name=bf8ceb9d-5264-4ddf-a01d-dd1abda471fd, price=9732.423228152025, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=33, name=bb51ee57-bb34-4696-8934-0eaf38bb6128, price=7015.385539888436, categoryName=DJ, version=3, category=Category(id=1, name=I_PHONE))
+Product(id=8, name=a570130f-0c15-4f73-8754-f46181a8154a, price=8220.17239763943, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+
+2024-12-07T12:54:43.432+06:00  INFO 21048 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'pgsql-unit'
+2024-12-07T12:54:43.445+06:00  INFO 21048 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-12-07T12:54:43.596+06:00  INFO 21048 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+Process finished with exit code 130
+
+*/
+
+
+

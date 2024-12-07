@@ -1,0 +1,107 @@
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		Optional<Product> optionalproduct=productRepository.findOne( (root, query, cb) -> cb.equal(root.get("id"),11));
+		System.out.println(optionalproduct.orElseThrow(()->new RuntimeException("product is not found by id = f11")));
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+		/*
+		SdlcProUnitInfo info=new SdlcProUnitInfo();
+		PersistenceProvider provider=new HibernatePersistenceProvider();
+		EntityManagerFactory emf=provider.createContainerEntityManagerFactory(info, Map.of("hibernate.format_sql","true"));
+
+		try(EntityManager em=emf.createEntityManager()){ // try with resource
+		em.getTransaction().begin() ;
+			var s = new StudentEntity("Rakib", "3.4");
+			em.persist(s);
+			em.getTransaction().commit();
+			em.close();
+		}
+		System.out.println("vanila java!");
+
+		 */
+	}
+}
+
+
+
+/*
+
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    where
+        p1_0.id=? 
+    fetch
+        first ? rows only
+2024-12-07T12:21:06.367+06:00 TRACE 31872 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [11]
+2024-12-07T12:21:06.397+06:00 TRACE 31872 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [2]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-12-07T12:21:06.538+06:00 TRACE 31872 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Product(id=11, name=9d28fcd1-3143-4ddf-9c7e-c78f3f2a6ee8, price=1902.0235335351242, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+2024-12-07T12:21:36.868+06:00  INFO 31872 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'pgsql-unit'
+2024-12-07T12:21:37.150+06:00  INFO 31872 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-12-07T12:21:37.713+06:00  INFO 31872 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+
+*/

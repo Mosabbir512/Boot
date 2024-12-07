@@ -1,0 +1,56 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.dto.ProductDTO;
+import com.sdlc.pro.edj.dto.ProductIdNamePriceDTO;
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.Product;
+
+import com.sdlc.pro.edj.projection.ProductIdNamePriceProjection;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product,Integer> {
+    Window<Product>findProductsByCategory_NameInOrderById(List<String> category,ScrollPosition position,Limit limit,Sort sort);
+   @Query("""
+            select p from Product p 
+            where lower(p.name) like lower(concat('%',?1,'%')) 
+            or lower(p.category.name) like lower(concat('%',?1,'%')) 
+            """)
+    Page<Product> findProductsByFilter(String searchValue,Pageable pageable);   // when  api call hobe then aita call hobe
+
+
+    @Query("select p.id as id,p.name as name,p.price as price from Product p where p.id=?1")
+    ProductIdNamePriceProjection findProductById(Integer id);
+
+
+}
+
+
+
+
+/*
+
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.name,
+        p1_0.price 
+    from
+        Product p1_0 
+    where
+        p1_0.id=?
+2024-12-07T10:02:39.761+06:00 TRACE 10680 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+org.springframework.data.jpa.repository.query.AbstractJpaQuery$TupleConverter$TupleBackedMap@3c92f2f9
+SAMSUNG Phone Ultra s9 90000.0
+
+
+
+*/
+

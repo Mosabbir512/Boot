@@ -1,0 +1,180 @@
+package com.sdlc.pro.edj.projection;
+public interface ProductIdNamePriceProjection {
+    Integer getId();
+    String getName();
+    Double getPrice();
+}
+
+
+
+package com.sdlc.pro.edj.specification;
+
+import com.sdlc.pro.edj.entity.Category_;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.entity.Product_;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.Set;
+
+public interface ProductSpecification {
+    static Specification<Product> byCategoryName(Set<String> categoryNames){
+        if(categoryNames==null || categoryNames.isEmpty())return null;
+        return (root, query, cb) -> root.get(Product_.CATEGORY).get(Category_.NAME).in(categoryNames); // here use modelgen maven
+    }
+
+    static Specification<Product> byPriceRance(Double start,Double end){
+        if(start==null || end==null || end<start)return null;
+        return (root, query, cb) -> cb.and(
+             cb.greaterThanOrEqualTo(root.get(Product_.PRICE),start),
+             cb.lessThanOrEqualTo(root.get(Product_.PRICE),end)
+        );
+    }
+    static Specification<Product>nameLike(String name){
+        if(name==null || name.isBlank())return null;
+        return (root, query, cb) -> cb.like(root.get(Product_.NAME),"%"+name+"%");
+    }
+}
+
+
+package com.sdlc.pro.edj;
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.Product;
+import com.sdlc.pro.edj.projection.ProductIdNamePriceProjection;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+import com.sdlc.pro.edj.specification.ProductSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.Set;
+
+@SpringBootApplication(
+        exclude = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                TransactionAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+    private PgsqlStudentRepository pgsqlStudentRepository;
+
+
+	@Autowired
+	private ProductRepository productRepository;
+
+
+	@Override
+	@Transactional
+	public void run(String... args) throws Exception {
+
+		Specification<Product> spec=Specification.where(
+				ProductSpecification.byCategoryName(Set.of("I_PHONE","S_PHONE"))
+						.and(ProductSpecification.byPriceRance(5000.00,10000.00))
+						.and(ProductSpecification.nameLike("f"))
+
+		);
+		Page<ProductIdNamePriceProjection> productPage1=productRepository.findBy(spec,
+				query ->query.as(ProductIdNamePriceProjection.class).page(PageRequest.of(2,10))
+				);
+		productPage1.forEach(System.out::println);
+	}
+
+	public static void main(String[] args) throws Exception {
+        SpringApplication.run(EsobDataJpaApplication.class,args);
+	
+	}
+}
+
+
+
+
+
+/*
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        p1_0.version 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+        and p1_0.price>=? 
+        and p1_0.price<=? 
+        and p1_0.name like ? escape '' 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+2024-12-15T15:15:02.243+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-12-15T15:15:02.243+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-12-15T15:15:02.243+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:DOUBLE) <- [5000.0]
+2024-12-15T15:15:02.246+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:DOUBLE) <- [10000.0]
+2024-12-15T15:15:02.246+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (5:VARCHAR) <- [%f%]
+2024-12-15T15:15:02.247+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (6:INTEGER) <- [20]
+2024-12-15T15:15:02.247+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (7:INTEGER) <- [10]
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.name 
+    from
+        Category c1_0 
+    where
+        c1_0.id=?
+2024-12-15T15:15:02.269+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    select
+        count(p1_0.id) 
+    from
+        Product p1_0 
+    join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        c1_0.name in (?, ?) 
+        and p1_0.price>=? 
+        and p1_0.price<=? 
+        and p1_0.name like ? escape ''
+2024-12-15T15:15:02.312+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [I_PHONE]
+2024-12-15T15:15:02.312+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [S_PHONE]
+2024-12-15T15:15:02.312+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (3:DOUBLE) <- [5000.0]
+2024-12-15T15:15:02.312+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (4:DOUBLE) <- [10000.0]
+2024-12-15T15:15:02.312+06:00 TRACE 14468 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (5:VARCHAR) <- [%f%]
+Product(id=9, name=ae9c0a74-eb6a-4ee9-aad8-6d6f60809c34, price=7638.697764502526, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=13, name=a88c16c7-d705-4c28-8df2-b94db4fca3d6, price=6817.378865200459, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=14, name=5bd488fe-4b49-4004-8c04-3d2b8c0079e0, price=6126.875144483397, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=16, name=a190d0e4-6c30-4969-b848-f5c598786ea7, price=5586.627955613861, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=18, name=9329b902-c886-40a7-b41b-9d277042fc8a, price=8436.629325273041, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=21, name=2573f66c-b946-4e8b-a78a-bfb7e53e34c5, price=9611.608888836075, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=22, name=a62b6139-f8c9-4a4a-a2db-c9b8ceab83bc, price=7664.379324295004, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=24, name=a4db2b7b-9f1b-4cfa-a446-4114fa92212b, price=6885.490787066221, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=25, name=e532c351-1b63-474f-93f9-99fbee169a19, price=5030.278020258085, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+Product(id=26, name=d6bb5a7b-19a7-46fc-a50b-b573c0ff1a0c, price=5673.292565165794, categoryName=DJ, version=2, category=Category(id=1, name=I_PHONE))
+
+
+*/

@@ -1,0 +1,61 @@
+public void run(String... args) throws Exception {
+
+	    var order=orderRepository.findByIdAndUser(1,new AppUser(1));
+		System.out.println(order);
+
+	}
+
+
+
+
+ Hibernate: 
+    select
+        o1_0.id,
+        o1_0.user_id 
+    from
+        Orders o1_0 
+    where
+        o1_0.id=? 
+        and o1_0.user_id=?
+2025-01-16T16:40:12.807+06:00 TRACE 14376 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2025-01-16T16:40:12.809+06:00 TRACE 14376 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [1]
+Hibernate: 
+    select
+        au1_0.id,
+        au1_0.address,
+        au1_0.email,
+        au1_0.name 
+    from
+        AppUser au1_0 
+    where
+        au1_0.id=?
+2025-01-16T16:40:12.881+06:00 TRACE 14376 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    select
+        oi1_0.Orders_id,
+        oi1_1.id,
+        p1_0.id,
+        c1_0.id,
+        c1_0.name,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        oi1_1.quantity 
+    from
+        Orders_OrderItem oi1_0 
+    join
+        OrderItem oi1_1 
+            on oi1_1.id=oi1_0.orderItems_id 
+    left join
+        Product p1_0 
+            on p1_0.id=oi1_1.product_id 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        oi1_0.Orders_id=?
+2025-01-16T16:40:12.944+06:00 TRACE 14376 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Orders(id=1, user=AppUser(id=1, name=RAkib Hossen, email=rokib@gmail.com, address=Mohakhali DOHS,Road-4,House-142), orderItems=[OrderItem(id=1, product=Product(id=1, name=iPhone 14, price=1000.0, categoryName=PHONE, category=Category(id=1, name=I_PHONE)), quantity=2), OrderItem(id=2, product=Product(id=2, name=SAMSUNG Phone Ultra s9, price=500.0, categoryName=PHONE, category=Category(id=2, name=S_PHONE)), quantity=3), OrderItem(id=3, product=Product(id=3, name=Dell Laptop, price=6000.0, categoryName=LAPTOP, category=Category(id=3, name=lAPTOP)), quantity=1)])
+2025-01-16T16:43:32.150+06:00  INFO 14376 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'pgsql-unit'
+2025-01-16T16:43:32.699+06:00  INFO 14376 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-01-16T16:43:33.694+06:00  INFO 14376 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

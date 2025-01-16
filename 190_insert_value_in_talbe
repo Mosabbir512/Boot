@@ -1,0 +1,86 @@
+	public void run(String... args) throws Exception {
+
+		/*
+      var user=new AppUser("RAkib Hossen","rokib@gmail.com","Mohakhali DOHS,Road-4,House-142");
+	 appUserRepository.save(user);
+	  var order =new Orders(new AppUser(1),List.of(
+			  new OrderItem(new Product(1),2),
+			  new OrderItem(new Product(2),3),
+			  new OrderItem(new Product(3),1)
+	  ));
+	  orderRepository.save(order);
+	  
+		 */
+
+	}
+
+
+
+
+
+Hibernate: 
+    insert 
+    into
+        Orders
+        (user_id) 
+    values
+        (?) 
+    returning id
+2025-01-16T16:02:15.056+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    insert 
+    into
+        OrderItem
+        (product_id, quantity) 
+    values
+        (?, ?) 
+    returning id
+2025-01-16T16:02:15.117+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2025-01-16T16:02:15.117+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [2]
+Hibernate: 
+    insert 
+    into
+        OrderItem
+        (product_id, quantity) 
+    values
+        (?, ?) 
+    returning id
+2025-01-16T16:02:15.121+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+2025-01-16T16:02:15.122+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [3]
+Hibernate: 
+    insert 
+    into
+        OrderItem
+        (product_id, quantity) 
+    values
+        (?, ?) 
+    returning id
+2025-01-16T16:02:15.125+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [3]
+2025-01-16T16:02:15.125+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [1]
+Hibernate: 
+    insert 
+    into
+        Orders_OrderItem
+        (Orders_id, orderItems_id) 
+    values
+        (?, ?)
+2025-01-16T16:02:15.161+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2025-01-16T16:02:15.163+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [1]
+Hibernate: 
+    insert 
+    into
+        Orders_OrderItem
+        (Orders_id, orderItems_id) 
+    values
+        (?, ?)
+2025-01-16T16:02:15.169+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2025-01-16T16:02:15.169+06:00 TRACE 7480 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [2]
+Hibernate: 
+    insert 
+    into
+        Orders_OrderItem
+        (Orders_id, orderItems_id) 
+    values
+        (?, ?)
+
+ 

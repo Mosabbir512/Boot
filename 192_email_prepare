@@ -1,0 +1,388 @@
+package com.sdlc.pro.edj.dto;
+
+public record InvoiceInfo(String content,String mailTo) {
+
+}
+
+
+
+package com.sdlc.pro.edj.dto;
+
+public record InvoiceDescItem (String name,Integer quantity,Double price,Double amount){
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Invoice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f8f8;
+    }
+    .invoice-container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .invoice-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .total-section h2{
+      color:#333;
+    }
+
+    .footer{
+      text-align: center;
+      margin-top: 30px;
+      color: #888;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <div class="invoice-header">
+    <h1>Order Invoice</h1>
+    <p>Order Id:#[[${order_id}]]</p>
+    <p>Date: january 14,2025</p>
+  </div>
+
+  <div class="customer-details">
+       <h3> Customer Details: </h3>
+    <p><strong>Name: </strong>[[${user_name}]]</p>
+    <p><strong>Email: </strong>[[${user_email}]]</p>
+    <p><strong>Address: </strong>[[${user_address}]]</p>
+  </div>
+
+  <div class="invoice-details">
+      <h3>Order Details</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>SL NO. </th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+        </thead>
+
+       <tbody>
+         <tr th:each="item,stat: ${items}">
+           <td>[[${stat.index}]]</td>
+           <td>[[${item.name}]]</td>
+           <td>[[${item.quantity}]]</td>
+           <td>[[${item.price}]]</td>
+           <td>[[${item.amount}]]</td>
+
+         </tr>
+       </tbody>
+      </table>
+
+  </div>
+
+  <div class="total-section">
+    <h2>Total: [[${total_amount}]]</h2>
+  </div>
+
+  <div class="footer">
+    <p>Thank you for your purchase! </p>
+
+  </div>
+
+</div>
+</body>
+</html>
+
+
+
+
+package com.sdlc.pro.edj;
+
+import com.sdlc.pro.edj.dto.InvoiceDescItem;
+import com.sdlc.pro.edj.dto.InvoiceInfo;
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.*;
+import com.sdlc.pro.edj.projection.ProductIdNamePriceProjection;
+import com.sdlc.pro.edj.repository.AppUserRepository;
+import com.sdlc.pro.edj.repository.OrderRepository;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+
+import com.sdlc.pro.edj.specification.ProductSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.context.IContext;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+@SpringBootApplication(
+		exclude = {
+				DataSourceAutoConfiguration.class,
+				HibernateJpaAutoConfiguration.class,
+				TransactionAutoConfiguration.class,
+				JpaRepositoriesAutoConfiguration.class
+		}
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+	private ProductRepository productRepository;
+
+	@Autowired
+    private AppUserRepository appUserRepository;
+
+	@Autowired
+	private TemplateEngine templateEngine;
+
+  @Autowired
+  private OrderRepository orderRepository;
+   
+	@Override
+	public void run(String... args) throws Exception {
+	  var order=orderRepository.findByIdAndUser(1,new AppUser(1));
+		System.out.println(order);
+		var invoice=builInvoice(order);
+		sendInvoiceMailTo(invoice);
+	}
+
+ 
+	private InvoiceInfo builInvoice(Orders order){
+ 
+		var user=order.getUser();
+		var invoiceItems=order.getOrderItems()
+				.stream()
+				.map(i->new InvoiceDescItem(i.getProduct().getName(),i.getQuantity(),i.getProduct().getPrice(),i.getProduct().getPrice()*i.getQuantity()))
+				.toList();
+    
+		var total=invoiceItems
+				.stream()
+				.map(InvoiceDescItem::amount)
+				.reduce(0.0,Double::sum);
+
+		var context=new Context();
+		context.setVariable("order_id",order.getId());
+		context.setVariable("user_name",user.getName());
+		context.setVariable("user_email",user.getEmail());
+		context.setVariable("user_address",user.getAddress());
+		context.setVariable("items",invoiceItems);
+		context.setVariable("total_amount",total);
+
+
+		var content=templateEngine.process("invoice",context);
+		return new InvoiceInfo(content,user.getEmail());
+  
+	  }
+
+	private void sendInvoiceMailTo(InvoiceInfo invoiceInfo) {
+			System.out.println(invoiceInfo);
+
+	}
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(EsobDataJpaApplication.class,args);
+	
+	}
+}
+
+
+
+
+/*
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.user_id 
+    from
+        Orders o1_0 
+    where
+        o1_0.id=? 
+        and o1_0.user_id=?
+2025-01-16T22:08:14.443+06:00 TRACE 8276 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2025-01-16T22:08:14.447+06:00 TRACE 8276 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (2:INTEGER) <- [1]
+Hibernate: 
+    select
+        au1_0.id,
+        au1_0.address,
+        au1_0.email,
+        au1_0.name 
+    from
+        AppUser au1_0 
+    where
+        au1_0.id=?
+2025-01-16T22:08:14.486+06:00 TRACE 8276 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Hibernate: 
+    select
+        oi1_0.Orders_id,
+        oi1_1.id,
+        p1_0.id,
+        c1_0.id,
+        c1_0.name,
+        p1_0.categoryName,
+        p1_0.name,
+        p1_0.price,
+        oi1_1.quantity 
+    from
+        Orders_OrderItem oi1_0 
+    join
+        OrderItem oi1_1 
+            on oi1_1.id=oi1_0.orderItems_id 
+    left join
+        Product p1_0 
+            on p1_0.id=oi1_1.product_id 
+    left join
+        Category c1_0 
+            on c1_0.id=p1_0.category_id 
+    where
+        oi1_0.Orders_id=?
+2025-01-16T22:08:14.525+06:00 TRACE 8276 --- [           main] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+Orders(id=1, user=AppUser(id=1, name=RAkib Hossen, email=it20019@gmail.com, address=Mohakhali DOHS,Road-4,House-142), orderItems=[OrderItem(id=1, product=Product(id=1, name=iPhone 14, price=1000.0, categoryName=PHONE, category=Category(id=1, name=I_PHONE)), quantity=2), OrderItem(id=2, product=Product(id=2, name=SAMSUNG Phone Ultra s9, price=500.0, categoryName=PHONE, category=Category(id=2, name=S_PHONE)), quantity=3), OrderItem(id=3, product=Product(id=3, name=Dell Laptop, price=6000.0, categoryName=LAPTOP, category=Category(id=3, name=lAPTOP)), quantity=1)])
+InvoiceInfo[content=<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Invoice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f8f8;
+    }
+    .invoice-container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .invoice-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .total-section h2{
+      color:#333;
+    }
+
+    .footer{
+      text-align: center;
+      margin-top: 30px;
+      color: #888;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <div class="invoice-header">
+    <h1>Order Invoice</h1>
+    <p>Order Id:#1</p>
+    <p>Date: january 14,2025</p>
+  </div>
+
+  <div class="customer-details">
+       <h3> Customer Details: </h3>
+    <p><strong>Name: </strong>RAkib Hossen</p>
+    <p><strong>Email: </strong>it20019@gmail.com</p>
+    <p><strong>Address: </strong>Mohakhali DOHS,Road-4,House-142</p>
+  </div>
+
+  <div class="invoice-details">
+      <h3>Order Details</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>SL NO. </th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+        </thead>
+
+       <tbody>
+         <tr>
+           <td>0</td>
+           <td>iPhone 14</td>
+           <td>2</td>
+           <td>1000.0</td>
+           <td>2000.0</td>
+
+         </tr>
+         <tr>
+           <td>1</td>
+           <td>SAMSUNG Phone Ultra s9</td>
+           <td>3</td>
+           <td>500.0</td>
+           <td>1500.0</td>
+
+         </tr>
+         <tr>
+           <td>2</td>
+           <td>Dell Laptop</td>
+           <td>1</td>
+           <td>6000.0</td>
+           <td>6000.0</td>
+
+         </tr>
+       </tbody>
+      </table>
+
+  </div>
+
+  <div class="total-section">
+    <h2>Total: 9500.0</h2>
+  </div>
+
+  <div class="footer">
+    <p>Thank you for your purchase! </p>
+
+  </div>
+
+</div>
+</body>
+</html>
+, mailTo=it20019@gmail.com]
+2025-01-16T22:08:29.741+06:00  INFO 8276 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'pgsql-unit'
+2025-01-16T22:08:29.743+06:00  INFO 8276 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-01-16T22:08:29.801+06:00  INFO 8276 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+Process finished with exit code 130
+
+*/
+

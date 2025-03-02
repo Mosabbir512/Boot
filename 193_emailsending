@@ -1,0 +1,386 @@
+package com.sdlc.pro.edj;
+
+
+import com.sdlc.pro.edj.dto.InvoiceDescItem;
+import com.sdlc.pro.edj.dto.InvoiceInfo;
+import com.sdlc.pro.edj.dto.ProductNamePriceDTO;
+import com.sdlc.pro.edj.entity.*;
+import com.sdlc.pro.edj.projection.ProductIdNamePriceProjection;
+import com.sdlc.pro.edj.repository.AppUserRepository;
+import com.sdlc.pro.edj.repository.OrderRepository;
+import com.sdlc.pro.edj.repository.PgsqlStudentRepository;
+import com.sdlc.pro.edj.repository.ProductRepository;
+
+
+import com.sdlc.pro.edj.specification.ProductSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
+
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
+
+@SpringBootApplication(
+		exclude = {
+				DataSourceAutoConfiguration.class,
+				HibernateJpaAutoConfiguration.class,
+				TransactionAutoConfiguration.class,
+				JpaRepositoriesAutoConfiguration.class
+		}
+)
+public class EsobDataJpaApplication implements CommandLineRunner {
+
+
+	@Autowired
+	private ProductRepository productRepository;
+
+	@Autowired
+    private AppUserRepository appUserRepository;
+
+	@Autowired
+	private TemplateEngine templateEngine;
+
+	@Autowired
+	private JavaMailSender mailSender;
+
+   @Autowired
+    private OrderRepository orderRepository;
+	@Override
+	//@Transactional
+	public void run(String... args) throws Exception {
+
+	    var order=orderRepository.findByIdAndUser(1,new AppUser(1));
+		System.out.println(order);
+
+		var invoice=buildInvoice(order);
+		sendInvoiceMailTo(invoice);
+
+	}
+	private InvoiceInfo buildInvoice(Orders order){
+		var user=order.getUser();
+		var invoiceItems=order.getOrderItems()
+				.stream()
+				.map(i->new InvoiceDescItem(i.getProduct().getName(),i.getQuantity(),i.getProduct().getPrice(),i.getProduct().getPrice()*i.getQuantity()))
+				.toList();
+		var total=invoiceItems
+				.stream()
+				.map(InvoiceDescItem::amount)
+				.reduce(0.0,Double::sum);
+
+		var context=new Context();
+		context.setVariable("order_id",order.getId());
+		context.setVariable("user_name",user.getName());
+		context.setVariable("user_email",user.getEmail());
+		context.setVariable("user_address",user.getAddress());
+		context.setVariable("items",invoiceItems);
+		context.setVariable("total_amount",total);
+
+
+
+		var content=templateEngine.process("invoice",context);
+		return new InvoiceInfo(content,user.getEmail());
+
+	    }
+
+	    private void sendInvoiceMailTo(InvoiceInfo invoiceInfo) {
+		try {
+			System.out.println(invoiceInfo);
+			var mimeMessage = mailSender.createMimeMessage();
+			var helper = new MimeMessageHelper(mimeMessage);
+			helper.setFrom("mosabbirhossain512@gmail.com");
+			helper.setTo(invoiceInfo.mailTo());
+			helper.setSubject("Order Invoice");
+            helper.setText(invoiceInfo.content(),true);
+		    mailSender.send(mimeMessage);
+		} catch (Exception ex) {
+			throw new RuntimeException("Mail can't send due to ex: " + ex.getMessage());
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(EsobDataJpaApplication.class,args);
+
+	}
+}
+
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface OrderRepository extends JpaRepository<Orders,Integer> {
+       Orders findByIdAndUser (Integer id, AppUser user);
+
+}
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface OrderRepository extends JpaRepository<Orders,Integer> {
+       Orders findByIdAndUser (Integer id, AppUser user);
+
+}
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.annotation.Generated;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.util.List;
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+@ToString
+public class Orders {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @ManyToOne
+    private AppUser user;
+    @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    private List<OrderItem>orderItems;
+
+    public Orders(AppUser user, List<OrderItem> orderItems) {
+        this.user = user;
+        this.orderItems = orderItems;
+    }
+}
+
+
+
+
+package com.sdlc.pro.edj.dto;
+
+public record InvoiceDescItem (String name,Integer quantity,Double price,Double amount){
+}
+
+
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Table(indexes = {
+        @Index(name = "price_index",columnList = "price"),
+        @Index(name = "id_and_price_index",columnList = "id, price")
+})
+@Entity
+@Setter
+@ToString
+@Getter
+@NoArgsConstructor
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+    private Double price;
+    private String categoryName;
+
+//    @Version
+//    private Long version;
+    @ManyToOne
+    private Category category;
+
+    public Product(Integer id) {
+        this.id = id;
+    }
+
+    public Product(Integer id, String name, Double price, String categoryName) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.categoryName = categoryName;
+    }
+}
+
+
+
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Entity
+@Setter
+@Getter@ToString
+@NoArgsConstructor
+public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String name;
+
+    public Category(Integer id) {
+        this.id = id;
+    }
+}
+
+
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+@ToString
+public class OrderItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @OneToOne
+    private Product product;
+    private Integer quantity;
+
+    public OrderItem(Product product, Integer quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
+}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Invoice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f8f8;
+    }
+    .invoice-container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .invoice-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .total-section h2{
+      color:#333;
+    }
+
+    .footer{
+      text-align: center;
+      margin-top: 30px;
+      color: #888;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <div class="invoice-header">
+    <h1>Order Invoice</h1>
+    <p>Order Id:#[[${order_id}]]</p>
+    <p>Date: january 14,2025</p>
+  </div>
+
+  <div class="customer-details">
+       <h3> Customer Details: </h3>
+    <p><strong>Name: </strong>[[${user_name}]]</p>
+    <p><strong>Email: </strong>[[${user_email}]]</p>
+    <p><strong>Address: </strong>[[${user_address}]]</p>
+  </div>
+
+  <div class="invoice-details">
+      <h3>Order Details</h3>
+      <table>
+        <thead>
+        <tr>
+          <th>SL NO. </th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+        </thead>
+
+       <tbody>
+         <tr th:each="item,stat: ${items}">
+           <td>[[${stat.index}]]</td>
+           <td>[[${item.name}]]</td>
+           <td>[[${item.quantity}]]</td>
+           <td>[[${item.price}]]</td>
+           <td>[[${item.amount}]]</td>
+
+         </tr>
+       </tbody>
+      </table>
+
+  </div>
+
+  <div class="total-section">
+    <h2>Total: [[${total_amount}]]</h2>
+  </div>
+
+  <div class="footer">
+    <p>Thank you for your purchase! </p>
+
+  </div>
+
+</div>
+</body>
+</html>
+

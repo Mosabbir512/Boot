@@ -1,0 +1,230 @@
+package com.sdlc.pro.edj.Service;
+
+import com.sdlc.pro.edj.dto.InvoiceDescItem;
+import com.sdlc.pro.edj.dto.InvoiceInfo;
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import com.sdlc.pro.edj.repository.OrderRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+     private final OrderRepository orderRepository;
+     private final TemplateEngine templateEngine;
+     private final JavaMailSender mailSender;
+     @Autowired
+     private TransactionTemplate transactionTemplate;
+
+
+     //@Transactional
+     public void confirmOrder(Integer orderId,Integer userId){
+
+          CompletableFuture.supplyAsync(() -> transactionTemplate.execute(status -> {
+                            System.out.println("Tx occurred by "+Thread.currentThread().getName());
+                            var order=orderRepository.findByIdAndUser(orderId, new AppUser(userId));
+                            Hibernate.initialize(order.getOrderItems());
+                            return order;
+                       }))
+                  .thenApply(this::buildInvoice)
+                  .thenAccept(this::sendInvoiceMailTo)
+                  .exceptionally(ex->{
+                       ex.printStackTrace();
+                       return null;
+                  });
+
+/*
+          var order=orderRepository.findByIdAndUser(orderId,new AppUser(userId));
+          var invoice=buildInvoice(order);
+          sendInvoiceMailTo(invoice);
+
+ */
+          System.out.println("done by thread:: "+Thread.currentThread().getName());
+/*
+          orderRepository.findByIdAndUser(orderId,new AppUser(userId))
+                  .thenApply(this::buildInvoice)
+                  .thenAccept(this::sendInvoiceMailTo)
+                  .exceptionally(ex->{
+                       ex.printStackTrace();
+                       return null;
+                  });
+
+
+ */
+
+     }
+
+
+     private InvoiceInfo buildInvoice(Orders order){
+          System.out.println("buildInvoice by :"+Thread.currentThread().getName());
+          var user=order.getUser();
+          var invoiceItems=order.getOrderItems()
+                  .stream()
+                  .map(i->new InvoiceDescItem(i.getProduct().getName(),i.getQuantity(),i.getProduct().getPrice(),i.getProduct().getPrice()*i.getQuantity()))
+                  .toList();
+          var total=invoiceItems
+                  .stream()
+                  .map(InvoiceDescItem::amount)
+                  .reduce(0.0,Double::sum);
+
+          var context=new Context();
+          context.setVariable("order_id",order.getId());
+          context.setVariable("user_name",user.getName());
+          context.setVariable("user_email",user.getEmail());
+          context.setVariable("user_address",user.getAddress());
+          context.setVariable("items",invoiceItems);
+          context.setVariable("total_amount",total);
+
+
+
+          var content=templateEngine.process("invoice",context);
+          return new InvoiceInfo(content,user.getEmail());
+
+     }
+     private void sendInvoiceMailTo(InvoiceInfo invoiceInfo) {
+          try {
+               System.out.println("sendInvoiceToMail by :"+Thread.currentThread().getName());
+               sleep(3000);
+               System.out.println(invoiceInfo);
+               var mimeMessage = mailSender.createMimeMessage();
+               var helper = new MimeMessageHelper(mimeMessage);
+               helper.setFrom("mosabbirhossain512@gmail.com");
+               helper.setTo(invoiceInfo.mailTo());
+               helper.setSubject("Order Invoice");
+               helper.setText(invoiceInfo.content(),true);
+              // mailSender.send(mimeMessage);
+          } catch (Exception ex) {
+               throw new RuntimeException("Mail can't send due to ex: " + ex.getMessage());
+          }
+     }
+     private void sleep(long ms){
+          try {
+               Thread.sleep(ms);
+          } catch (InterruptedException e) {
+               throw new RuntimeException(e);
+          }
+     }
+
+}
+
+
+
+
+package com.sdlc.pro.edj.controller;
+
+import com.sdlc.pro.edj.Service.OrderService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.security.cert.Extension;
+
+@Controller
+@RequiredArgsConstructor
+public class OrderController  {
+    private final OrderService orderService;
+    @ResponseBody
+    @GetMapping(value = "/order",produces = MediaType.TEXT_HTML_VALUE)
+    public String orderPage(){
+        return """
+                <a href="/order/now?order_id=1&user_id=1">Order now</a>
+                """;
+    }
+
+    @ResponseBody
+    @GetMapping("/order/now")
+    public String orderNow(@RequestParam("order_id")Integer orderId,
+                           @RequestParam("user_id")Integer userId){
+        try {
+            orderService.confirmOrder(orderId,userId);
+            return "order confirmed successfully";
+        }catch (Exception ex){
+            return "Order failed";
+        }
+    }
+
+}
+
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import net.bytebuddy.description.field.FieldDescription;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.scheduling.annotation.Async;
+
+import java.util.concurrent.CompletableFuture;
+
+public interface OrderRepository extends JpaRepository<Orders,Integer> {
+       Orders findByIdAndUser (Integer id, AppUser user);
+//         @Async
+//       @EntityGraph(attributePaths = "orderItems")
+//       @Query("select  o from Orders o where o.id=?1 and o.user=?1")
+  //     CompletableFuture<Orders>findByIdAndUser(Integer id,AppUser user);
+
+}
+
+
+
+
+
+package com.sdlc.pro.edj.entity;
+
+import jakarta.annotation.Generated;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.util.List;
+
+@Entity
+@Setter
+@Getter
+@NoArgsConstructor
+@ToString
+public class Orders {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @ManyToOne
+    private AppUser user;
+
+    @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    private List<OrderItem>orderItems;
+
+    public Orders(AppUser user, List<OrderItem> orderItems) {
+        this.user = user;
+        this.orderItems = orderItems;
+    }
+
+
+}
+

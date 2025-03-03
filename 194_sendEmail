@@ -1,0 +1,94 @@
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import net.bytebuddy.description.field.FieldDescription;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.scheduling.annotation.Async;
+
+import java.util.concurrent.CompletableFuture;
+@Async
+public interface OrderRepository extends JpaRepository<Orders,Integer> {
+  //     Orders findByIdAndUser (Integer id, AppUser user);
+//       @Async
+//       @EntityGraph(attributePaths = "orderItems")
+//       @Query("select  o from Orders o where o.id=?1 and o.user=?1")
+       CompletableFuture<Orders>findByIdAndUser(Integer id,AppUser user);
+
+}
+
+
+
+
+package com.sdlc.pro.edj.repository;
+
+import com.sdlc.pro.edj.entity.AppUser;
+import com.sdlc.pro.edj.entity.Orders;
+import net.bytebuddy.description.field.FieldDescription;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.scheduling.annotation.Async;
+
+import java.util.concurrent.CompletableFuture;
+@Async
+public interface OrderRepository extends JpaRepository<Orders,Integer> {
+  //     Orders findByIdAndUser (Integer id, AppUser user);
+//       @Async
+//       @EntityGraph(attributePaths = "orderItems")
+//       @Query("select  o from Orders o where o.id=?1 and o.user=?1")
+       CompletableFuture<Orders>findByIdAndUser(Integer id,AppUser user);
+
+}
+
+
+
+
+
+
+package com.sdlc.pro.edj.controller;
+
+import com.sdlc.pro.edj.Service.OrderService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.security.cert.Extension;
+
+@Controller
+@RequiredArgsConstructor
+public class OrderController  {
+    private final OrderService orderService;
+    @ResponseBody
+    @GetMapping(value = "/order",produces = MediaType.TEXT_HTML_VALUE)
+    public String orderPage(){
+        return """
+                <a href="/order/now?order_id=1&user_id=1">Order now</a>
+                """;
+    }
+
+    @ResponseBody
+    @GetMapping("/order/now")
+    public String orderNow(@RequestParam("order_id")Integer orderId,
+                           @RequestParam("user_id")Integer userId){
+        try {
+            orderService.confirmOrder(orderId,userId);
+            return "order confirmed successfully";
+        }catch (Exception ex){
+            return "Order failed";
+        }
+    }
+
+}
+
+
+
+
